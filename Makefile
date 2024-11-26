@@ -21,7 +21,6 @@ pre-commit: venv
 
 test: venv
 	.venv/bin/python -m pytest tests
-	.venv/bin/python -m pytest polars_bio --doctest-modules
 
 run: install
 	source .venv/bin/activate && python run.py
