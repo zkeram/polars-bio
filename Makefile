@@ -15,13 +15,13 @@ install-release: venv
 
 pre-commit: venv
 	cargo fmt --all && cargo clippy --all-features
-	.venv/bin/python -m ruff check polars_xdt tests --fix --exit-non-zero-on-fix
-	.venv/bin/python -m ruff format polars_xdt tests
-	.venv/bin/python -m mypy polars_xdt tests
+	.venv/bin/python -m ruff check polars_bio tests --fix --exit-non-zero-on-fix
+	.venv/bin/python -m ruff format polars_bio tests
+	.venv/bin/python -m mypy polars_bio tests
 
 test: venv
 	.venv/bin/python -m pytest tests
-	.venv/bin/python -m pytest polars_xdt --doctest-modules
+	.venv/bin/python -m pytest polars_bio --doctest-modules
 
 run: install
 	source .venv/bin/activate && python run.py
