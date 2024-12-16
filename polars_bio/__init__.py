@@ -1,4 +1,12 @@
-from .overlap import ctx, overlap
-from .polars_bio import OverlapFilter
+import logging
 
-__all__ = ["overlap", "ctx", "OverlapFilter"]
+from .polars_bio import FilterOp
+from .range_op import ctx, nearest, overlap
+
+logging.basicConfig()
+logging.getLogger().setLevel(logging.WARN)
+logger = logging.getLogger("polars_bio")
+logger.setLevel(logging.INFO)
+
+
+__all__ = ["overlap", "nearest", "ctx", "FilterOp"]
