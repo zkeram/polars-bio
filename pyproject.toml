@@ -15,10 +15,10 @@ classifiers = [
 ]
 
 dependencies = [
-  "polars~=1.16.0",
+  "polars~=1.18.0",
   "pandas~=2.2.3",
   "pyarrow~=18.1.0",
-  "datafusion ~=42.0.0",
+  "datafusion ~=43.1.0",
   "bioframe ~=0.7.2"]
 
 [tool.maturin]
@@ -36,11 +36,11 @@ authors = ["Marek Wiewiórka <marek.wiewiorka@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.13"
-polars = "^1.16.0"
+python = ">=3.12,<3.13"
+polars = "^1.18.0"
 pandas = "^2.2.3"
 pyarrow = "^18.1.0"
-datafusion = "^42.0.0"
+datafusion = "^43.1.0"
 bioframe = "^0.7.2"
 
 [tool.poetry.dev-dependencies]
@@ -56,4 +56,15 @@ mkdocs-jupyter = "^0.25.1"
 mkdocs-material = "^9.5.48"
 mike = "^2.1.3"
 mkdocstrings-python = "^1.12.2"
+markdown-exec = "^1.10.0"
+mkdocs-with-pdf = "^0.9.3"
 mypy = "^1.13.0"
+py-cpuinfo = "^9.0.0"
+jupyter_client = "^8.6.3"
+psutil = "^6.1.1"
+rich = "^13.9.4"
+pyranges = {git = "https://github.com/pyranges/pyranges.git", rev = "4f0a153336e7153cdfea15b141ce4ea35a24e233" }
+GenomicRanges = "^0.5.0"
+pyranges1 = { git = "https://github.com/mwiewior/pyranges1.git", rev = "949d7c15c1c2e217f4404415f79b386f326b6f8d"}
+pybedtools = "^0.10.0"
+pygenomics =  { git = "https://gitlab.com/gtamazian/pygenomics.git", rev = "0.1.1"}
