@@ -8,6 +8,7 @@
 ### Detailed results shortcuts 👨‍🔬
 - [Binary operations](#binary-operations)
 - [Parallel execution and scalability](#parallel-execution-and-scalability)
+- [Memory characteristics](#memory-characteristics)
 - [DataFrame formats performance](#dataframes-comparison)
 
 ### Test datasets 🗃️
@@ -57,9 +58,9 @@ Test cases were categorized based on the size 👕 of the input datasets and the
 - **L-size**: 100,000,000 < output < 1,000,000,000
 - **XL-size**: output > 1,000,000,000
 
-!!! note
-    Naming convention for the test cases is as follows `test-case-size (dataset-1-id, dataset-2-id)`, e.g.: `S-size (1-2)`, where `1` and `2` are the indices of the datasets used in the test case.
-
+!!! tip
+    1. Naming convention for the test cases is as follows `test-case-size (dataset-1-id, dataset-2-id)`, e.g.: `S-size (1-2)`, where `1` and `2` are the indices of the datasets used in the test case.
+    2. In the case of all but *polars-bio* native reader the reported timings **exclude** the time to read the data from disk and do the required preprocessing (e.g. Python object creation) and column mappings.
 ### Apple Silicon (macOS) 🍎
 Here is the configuration of the Apple Silicon machine used for benchmarking:
 
@@ -727,6 +728,8 @@ the `parallel` dataset was used (see [Test datasets](#test-datasets))
 
 ### Overlap operation
 
+
+
 #### Apple Silicon (macOS) 🍎
 
 ##### 0-8
@@ -1171,24 +1174,24 @@ the `parallel` dataset was used (see [Test datasets](#test-datasets))
 
 ##### 7-3
 
-| Library                 |  Min (s) |  Max (s) | Mean (s) | Speedup    |
-|-------------------------|----------|----------|----------|------------|
-| polars_bio              | 0.283038 | 0.292933 | 0.288120 | ***1.00x** |
-| polars_bio_pandas_lf    | 0.496220 | 0.510444 | 0.502504 | 0.57x      |
-| polars_bio_pandas_pd    | 0.495243 | 0.498179 | 0.497064 | 0.58x      |
-| polars_bio_polars_eager | 0.446789 | 0.455552 | 0.450521 | **0.64x**  |
-| polars_bio_polars_lazy  | 0.450512 | 0.456530 | 0.453931 | 0.63x      |
+| Library                 |  Min (s) |  Max (s) | Mean (s) | Speedup   |
+|-------------------------|----------|----------|----------|-----------|
+| polars_bio              | 0.283038 | 0.292933 | 0.288120 | **1.00x** |
+| polars_bio_pandas_lf    | 0.496220 | 0.510444 | 0.502504 | 0.57x     |
+| polars_bio_pandas_pd    | 0.495243 | 0.498179 | 0.497064 | 0.58x     |
+| polars_bio_polars_eager | 0.446789 | 0.455552 | 0.450521 | **0.64x** |
+| polars_bio_polars_lazy  | 0.450512 | 0.456530 | 0.453931 | 0.63x     |
 
 #### L-size
 ##### 0-8
 
-| Library                 |   Min (s) |   Max (s) |  Mean (s) | Speedup    |
-|-------------------------|-----------|-----------|-----------|------------|
-| polars_bio              |  4.519114 |  4.539367 |  4.532138 | ***1.00x** |
-| polars_bio_pandas_lf    | 12.710922 | 12.805014 | 12.751166 | 0.36x      |
-| polars_bio_pandas_pd    | 12.699757 | 12.820158 | 12.759016 | 0.36x      |
-| polars_bio_polars_eager | 12.455788 | 12.555952 | 12.501217 | 0.36x      |
-| polars_bio_polars_lazy  | 12.536595 | 12.579006 | 12.561026 | 0.36x      |
+| Library                 |   Min (s) |   Max (s) |  Mean (s) | Speedup   |
+|-------------------------|-----------|-----------|-----------|-----------|
+| polars_bio              |  4.519114 |  4.539367 |  4.532138 | **1.00x** |
+| polars_bio_pandas_lf    | 12.710922 | 12.805014 | 12.751166 | 0.36x     |
+| polars_bio_pandas_pd    | 12.699757 | 12.820158 | 12.759016 | 0.36x     |
+| polars_bio_polars_eager | 12.455788 | 12.555952 | 12.501217 | 0.36x     |
+| polars_bio_polars_lazy  | 12.536595 | 12.579006 | 12.561026 | 0.36x     |
 
 ##### 4-8
 
@@ -1239,6 +1242,66 @@ the `parallel` dataset was used (see [Test datasets](#test-datasets))
 | polars_bio_polars_lazy-8  | 2.406907 | 2.418571 | 2.411573 | **1.20x** |
 
 
+### Memory characteristics
+How to run the benchmarks with [memory-profiler](https://github.com/pythonprofilers/memory_profiler):
+```bash
+(polars-bio-py3.12) ➜  polars-bio git:(master) ✗ pip list | grep memory
+memory-profiler            0.61.0
+
+mprof run --include-children benchmark/src/memory/mem_xxx.py
+mprof plot mprofile_xxx.dat
+```
+
+!!! tip
+    1. Here we report end-to-end time, i.e. including reading and writing to a file and all the required operations in between, such as data transformation, Python object creation, etc.
+
+
+#### Apple Silicon (macOS) 🍎
+
+##### Read Parquet files and count overlaps  7-8
+Library      | Peak Memory (MB) | Factor   |
+-------------|------------------|----------|
+polars-bio   | **14,650**       | **1.0x** |
+bioframe     | 35,720           | 2.43x    |
+pyranges0    | 30,140           | 2.06x    |
+pyranges1    | 35,940           | 2.45x    |
+
+
+###### polars-bio
+![polars-bio](assets/memory/polars-bio.png)
+###### bioframe
+![bioframe](assets/memory/bioframe.png)
+###### pyranges0
+![pyranges](assets/memory/pyranges0.png)
+###### pyranges1
+![pyranges](assets/memory/pyranges1.png)
+
+#### Calculate overlaps and export to a CSV file 7-8
+
+| Library           | Time (s)               | Speedup  | Peak Memory (MB) | Factor   |
+|-------------------|------------------------|----------|------------------|----------|
+| polars-bio        | **23.765**             | 0.77x    | 14,660           | 26.07x   |
+| polars-bio-stream | **18.221**<sup>1</sup> | **1.0x** | **562.22**       | **1.0x** |
+| bioframe          | 370.010                | 0.05x    | 33,352           | 59.32x   |
+| pyranges0         | 275.237                | 0.07x    | 30.052           | 53.45x   |
+| pyranges1         | 351.041                | 0.05x    | 36,530           | 0.06x    |
+
+<sup>1</sup> Despite limiting the number of threads in DataFusion (`datafusion.execution.target_partitions=1`) and in Polars (`POLARS_MAX_THREADS=1`) cpu utilization was constant and approx.160%.
+###### polars-bio
+![polars-bio](assets/memory/polars-bio_sink.png)
+
+###### polars-bio_stream
+![polars-bio](assets/memory/polars-bio_stream_sink.png)
+
+###### bioframe
+
+![bioframe](assets/memory/bioframe_sink.png)
+
+###### pyranges0
+
+![pyranges](assets/memory/pyranges0_sink.png)
+###### pyranges1
+![pyranges](assets/memory/pyranges1_sink.png)
 
 ## How to run the benchmarks
 ```bash

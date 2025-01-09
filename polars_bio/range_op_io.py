@@ -60,7 +60,7 @@ def range_lazy_scan(
             #  but for now we'll do it here.
             if with_columns is not None:
                 df = df.select(with_columns)
-        yield df
+            yield df
 
     return register_io_source(_overlap_source, schema=schema)
 

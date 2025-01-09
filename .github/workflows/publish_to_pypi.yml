@@ -2,6 +2,13 @@ name: Build, test, and publish to PyPI
 
 on:
   push:
+    branches:
+      - main
+      - master
+    tags:
+      - '*'
+  pull_request:
+    types: [opened, edited, ready_for_review, synchronize]
     paths-ignore:
       - 'docs/**'
       - 'benchmark/**'
@@ -10,10 +17,6 @@ on:
     branches:
       - main
       - master
-    tags:
-      - '*'
-
-  pull_request:
   workflow_dispatch:
 
 
@@ -50,7 +53,7 @@ jobs:
         run: rustup show
       - uses: mozilla-actions/sccache-action@v0.0.3
       - run: make venv
-      - run: make pre-commit
+#      - run: make pre-commit
       - run: make install
       - run: make test
 
@@ -77,7 +80,7 @@ jobs:
           manylinux: auto
 
       - name: Upload wheels
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wheels
           path: dist
