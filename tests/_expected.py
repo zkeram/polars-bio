@@ -83,11 +83,9 @@ PD_DF_NEAREST = (
 )
 PD_DF_COUNT_OVERLAPS = (
     mdpd.from_md(EXPECTED_COUNT_OVERLAPS)
-    .astype({"pos_start_1": "int64"})
-    .astype({"pos_end_1": "int64"})
-    .astype({"pos_start_2": "int64"})
-    .astype({"pos_end_2": "int64"})
-    .astype({"distance": "int64"})
+    .astype({"pos_start": "int64"})
+    .astype({"pos_end": "int64"})
+    .astype({"count": "int64"})
 )
 
 
