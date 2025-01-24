@@ -5,7 +5,7 @@ use tokio::runtime::Runtime;
 
 use crate::context::set_option_internal;
 use crate::option::{FilterOp, RangeOp, RangeOptions};
-use crate::query::{nearest_query, overlap_query, count_overlaps_query};
+use crate::query::{nearest_query, overlap_query, count_overlaps_query, count_overlaps_naive_query};
 use crate::utils::default_cols_to_string;
 use crate::DEFAULT_COLUMN_NAMES;
 
@@ -65,6 +65,8 @@ pub(crate) fn do_range_operation(
             rt.block_on(do_nearest(ctx, range_options))
         },
         RangeOp::CountOverlaps => rt.block_on(do_count_overlaps(ctx, range_options)),
+        RangeOp::CountOverlapsNaive => rt.block_on(do_count_overlaps_naive(ctx, range_options)),
+
         _ => panic!("Unsupported operation"),
     }
 }
@@ -101,6 +103,15 @@ async fn do_count_overlaps(
     range_opts: RangeOptions,
 ) -> datafusion::dataframe::DataFrame {
     let query = prepare_query(count_overlaps_query, range_opts);
+    debug!("Query: {}", query);
+    ctx.sql(&query).await.unwrap()
+}
+
+async fn do_count_overlaps_naive(
+    ctx: &ExonSession,
+    range_opts: RangeOptions,
+) -> datafusion::dataframe::DataFrame {
+    let query = prepare_query(count_overlaps_naive_query, range_opts);
     debug!("Query: {}", query);
     ctx.sql(&query).await.unwrap()
 }

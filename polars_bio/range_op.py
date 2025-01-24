@@ -169,6 +169,7 @@ def count_overlaps(
     on_cols: Union[list[str], None] = None,
     output_type: str = "polars.LazyFrame",
     streaming: bool = False,
+    naive_query: bool = False,
 ) -> Union[pl.LazyFrame, pl.DataFrame, pd.DataFrame]:
     """
     Count pairs of overlapping genomic intervals.
@@ -226,10 +227,12 @@ def count_overlaps(
      """
     _validate_overlap_input(cols1, cols2, on_cols, suffixes, output_type, how="inner")
 
+    range_op = RangeOp.CountOverlapsNaive if naive_query else RangeOp.CountOverlaps
+
     cols1 = DEFAULT_INTERVAL_COLUMNS if cols1 is None else cols1
     cols2 = DEFAULT_INTERVAL_COLUMNS if cols2 is None else cols2
     range_options = RangeOptions(
-        range_op=RangeOp.CountOverlaps,
+        range_op=range_op,
         filter_op=overlap_filter,
         suffixes=suffixes,
         columns_1=cols1,

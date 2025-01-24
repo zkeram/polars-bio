@@ -7,6 +7,7 @@ import polars as pl
 import pyarrow as pa
 import pyarrow.compute as pc
 from polars.io.plugins import register_io_source
+from .range_wrappers import range_operation_scan_wrapper, range_operation_frame_wrapper
 
 from polars_bio.polars_bio import (
     BioSessionContext,
@@ -25,17 +26,17 @@ def range_lazy_scan(
 ) -> pl.LazyFrame:
     range_function = None
     if isinstance(df_1, str) and isinstance(df_2, str):
-        range_function = range_operation_scan
+        range_function = range_operation_scan_wrapper
     elif isinstance(df_1, pl.DataFrame) and isinstance(df_2, pl.DataFrame):
-        range_function = range_operation_frame
+        range_function = range_operation_frame_wrapper
         df_1 = df_1.to_arrow().to_reader()
         df_2 = df_2.to_arrow().to_reader()
     elif isinstance(df_1, pd.DataFrame) and isinstance(df_2, pd.DataFrame):
-        range_function = range_operation_frame
+        range_function = range_operation_frame_wrapper
         df_1 = _df_to_arrow(df_1, range_options.columns_1[0]).to_reader()
         df_2 = _df_to_arrow(df_2, range_options.columns_2[0]).to_reader()
     elif isinstance(df_1, pl.LazyFrame) and isinstance(df_2, pl.LazyFrame):
-        range_function = range_operation_frame
+        range_function = range_operation_frame_wrapper
         df_1 = df_1.collect().to_arrow().to_reader()
         df_2 = df_2.collect().to_arrow().to_reader()
     else:
