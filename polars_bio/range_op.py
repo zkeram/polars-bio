@@ -365,7 +365,7 @@ def merge(
     Todo:
         Support for on_cols.
     """
-
+    suffixes = ("_1", "_2")
     _validate_overlap_input(cols, cols, on_cols, suffixes, output_type, how="inner")
     my_ctx = get_py_ctx()
     cols = DEFAULT_INTERVAL_COLUMNS if cols is None else cols
