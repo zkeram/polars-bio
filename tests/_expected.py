@@ -76,7 +76,7 @@ PD_DF_NEAREST = (
     .astype({"pos_end_2": "int64"})
     .astype({"distance": "int64"})
 )
-PD_DF_EXPECTED = (
+PD_DF_MERGE = (
     mdpd.from_md(EXPECTED_MERGE)
     .astype({"pos_start": "int64"})
     .astype({"pos_end": "int64"})
