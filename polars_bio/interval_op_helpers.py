@@ -2,6 +2,7 @@ import datafusion
 import pandas as pd
 import polars as pl
 from typing_extensions import TYPE_CHECKING, Union
+from pathlib import Path
 
 def get_py_ctx() -> datafusion.context.SessionContext:
     return datafusion.context.SessionContext()
