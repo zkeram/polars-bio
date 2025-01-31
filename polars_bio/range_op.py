@@ -7,6 +7,10 @@ from typing_extensions import TYPE_CHECKING, Union
 from .constants import DEFAULT_INTERVAL_COLUMNS
 from .context import ctx
 from .range_op_helpers import _validate_overlap_input, range_operation
+from .interval_op_helpers import read_df_to_datafusion, convert_result, get_py_ctx
+
+import datafusion
+from datafusion import col, literal
 
 __all__ = ["overlap", "nearest", "count_overlaps"]
 
@@ -222,21 +226,65 @@ def count_overlaps(
         ```
 
     Todo:
-         Support for on_cols.
          Support return_input.
      """
     _validate_overlap_input(cols1, cols2, on_cols, suffixes, output_type, how="inner")
-
-    range_op = RangeOp.CountOverlapsNaive if naive_query else RangeOp.CountOverlaps
-
+    my_ctx = get_py_ctx()
+    on_cols = [] if on_cols is None else on_cols
     cols1 = DEFAULT_INTERVAL_COLUMNS if cols1 is None else cols1
     cols2 = DEFAULT_INTERVAL_COLUMNS if cols2 is None else cols2
-    range_options = RangeOptions(
-        range_op=range_op,
-        filter_op=overlap_filter,
-        suffixes=suffixes,
-        columns_1=cols1,
-        columns_2=cols2,
-        streaming=streaming,
-    )
-    return range_operation(df1, df2, range_options, output_type, ctx)
+    if naive_query:
+        range_options = RangeOptions(
+            range_op=NaiveRangeQuery,
+            filter_op=overlap_filter,
+            suffixes=suffixes,
+            columns_1=cols1,
+            columns_2=cols2,
+            streaming=streaming,
+        )
+        return range_operation(df1, df2, range_options, output_type, ctx)
+    df1 = read_df_to_datafusion(my_ctx, df1)
+    df2 = read_df_to_datafusion(my_ctx, df2)
+
+    # TODO: guarantee no collisions
+    s1start_s2end = "s1starts2end"
+    s1end_s2start = "s1ends2start"
+    contig = "contig"
+    count = "count"
+    starts = "starts"
+    ends = "ends"
+    is_s1 = "is_s1"
+    suff, _ = suffixes
+
+    df1 = df1.select(*([literal(1).alias(is_s1), col(cols1[1]).alias(s1start_s2end), col(cols1[2]).alias(s1end_s2start), col(cols1[0]).alias(contig)] + on_cols))
+    df2 = df2.select(*([literal(0).alias(is_s1), col(cols2[2]).alias(s1end_s2start), col(cols2[1]).alias(s1start_s2end), col(cols2[0]).alias(contig)] + on_cols))
+    
+    df = df1.union(df2)
+
+    partitioning = [col(contig)] + [col(c) for c in on_cols]
+    df.show()
+    df = df.select(*([s1start_s2end, s1end_s2start, contig, is_s1,
+        datafusion.functions.sum(col(is_s1)).over(
+            datafusion.expr.Window(
+                partition_by=partitioning,
+                order_by=[col(s1start_s2end).sort(), col(is_s1).sort(ascending=(overlap_filter == FilterOp.Strict))],
+            )
+        ).alias(starts),
+        datafusion.functions.sum(col(is_s1)).over(
+            datafusion.expr.Window(
+                partition_by=partitioning,
+                order_by=[col(s1end_s2start).sort(), col(is_s1).sort(ascending=(overlap_filter == FilterOp.Weak))],
+            )
+        ).alias(ends)] + on_cols))
+    df.show()
+    df = df.filter(col(is_s1) == 0)
+    df = df.select(*([
+        col(contig).alias(cols1[0] + suff),
+        col(s1end_s2start).alias(cols1[1] + suff),
+        col(s1start_s2end).alias(cols1[2] + suff)] +
+        on_cols +
+        [(col(starts) - col(ends)).alias(count)]
+    ))
+
+    return convert_result(df, output_type, streaming)
+
