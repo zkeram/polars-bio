@@ -19,15 +19,15 @@ def read_df_to_datafusion(
         return py_ctx.from_polars(df.collect())
     elif isinstance(df, str):
         ext = Path(df).suffix
-        if ext == '.parquet':
-            return py_ctx.read_parquet(df)
-        elif ext == '.csv':
+        if ext == '.csv':
             return py_ctx.read_csv(df)
         elif ext == '.bed':
             return py_ctx.read_csv(df, has_header=False, delimited='\t', file_extension='.bed', schema=pa.schema([
                 (DEFAULT_COLUMNS[0], pa.string()),
                 (DEFAULT_COLUMNS[1], pa.int64()),
                 (DEFAULT_COLUMNS[2], pa.int64())]))
+        else:
+            return py_ctx.read_parquet(df)
     raise ValueError("Invalid `df` argument.")
 
 def df_to_lazyframe(
