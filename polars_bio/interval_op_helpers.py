@@ -19,9 +19,7 @@ def read_df_to_datafusion(
         return py_ctx.from_polars(df.collect())
     elif isinstance(df, str):
         ext = Path(df).suffix
-        if ext == '.parquet':
-            return py_ctx.read_parquet(df)
-        elif ext == '.csv':
+        if ext == '.csv':
             return py_ctx.read_csv(df)
         elif ext == '.bed':
             return py_ctx.read_csv(df, has_header=False, delimited='\t', file_extension='.bed', schema=pa.schema([
