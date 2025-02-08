@@ -255,14 +255,13 @@ def count_overlaps(
     ends = "ends"
     is_s1 = "is_s1"
     suff, _ = suffixes
-
+    df1, df2 = df2, df1
     df1 = df1.select(*([literal(1).alias(is_s1), col(cols1[1]).alias(s1start_s2end), col(cols1[2]).alias(s1end_s2start), col(cols1[0]).alias(contig)] + on_cols))
     df2 = df2.select(*([literal(0).alias(is_s1), col(cols2[2]).alias(s1end_s2start), col(cols2[1]).alias(s1start_s2end), col(cols2[0]).alias(contig)] + on_cols))
     
     df = df1.union(df2)
 
     partitioning = [col(contig)] + [col(c) for c in on_cols]
-    df.show()
     df = df.select(*([s1start_s2end, s1end_s2start, contig, is_s1,
         datafusion.functions.sum(col(is_s1)).over(
             datafusion.expr.Window(
@@ -276,7 +275,6 @@ def count_overlaps(
                 order_by=[col(s1end_s2start).sort(), col(is_s1).sort(ascending=(overlap_filter == FilterOp.Weak))],
             )
         ).alias(ends)] + on_cols))
-    df.show()
     df = df.filter(col(is_s1) == 0)
     df = df.select(*([
         col(contig).alias(cols1[0] + suff),
