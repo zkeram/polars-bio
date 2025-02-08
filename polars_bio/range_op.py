@@ -210,8 +210,9 @@ def merge(
     is_start_end = "is_start_or_end"
     current_intervals = "current_intervals"
     
-    start_positions = df.select(*([col(start).alias(start_end), literal(1).alias(is_start_end)] + on_cols))
     end_positions = df.select(*([(col(end) + min_dist).alias(start_end), literal(-1).alias(is_start_end)] + on_cols))
+    start_end_type = end_positions.schema().field(start_end).type
+    start_positions = df.select(*([col(start).alias(start_end).cast(start_end_type), literal(1).alias(is_start_end)] + on_cols))
 
     all_positions = start_positions.union(end_positions)
     sorting = [col(start_end).sort(), col(is_start_end).sort(ascending=(overlap_filter == FilterOp.Strict))]
