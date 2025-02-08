@@ -368,11 +368,17 @@ def merge(
     suffixes = ("_1", "_2")
     _validate_overlap_input(cols, cols, on_cols, suffixes, output_type, how="inner")
 
+
     my_ctx = get_py_ctx()
     cols = DEFAULT_INTERVAL_COLUMNS if cols is None else cols
     contig = cols[0]
     start = cols[1]
     end = cols[2]
+
+    df_schema = df.schema()
+    start_type = df_schema.field(start).type
+    end_type = df_schema.field(end).type
+
 
     on_cols = [] if on_cols is None else on_cols
     on_cols = [contig] + on_cols
@@ -411,6 +417,8 @@ def merge(
     result = all_positions.select(*([(col(start_end) - min_dist).alias(end), is_start_end,
         datafusion.functions.lag(col(start_end), partition_by=on_cols_expr).alias(start)] + on_cols + [n_intervals]))
     result = result.filter(col(is_start_end) == -1)
+    result = result.select(*([contig, col(start).cast(start_type), col(end).cast(end_type)] + on_cols[1:] + [n_intervals]))
+    
     result = result.select(*([start, end] + on_cols))
 
     result = result.select(*([contig, start, end] + on_cols[1:] + [n_intervals]))
