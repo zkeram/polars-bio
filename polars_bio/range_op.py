@@ -202,14 +202,14 @@ def merge(
     start = cols[1]
     end = cols[2]
     
-    df_schema = df.schema()
-    start_type = df_schema.field(start).type
-    end_type = df_schema.field(end).type
     
     on_cols = [] if on_cols is None else on_cols
     on_cols = [contig] + on_cols
     
     df = read_df_to_datafusion(my_ctx, df)
+    df_schema = df.schema()
+    start_type = df_schema.field(start).type
+    end_type = df_schema.field(end).type
     # TODO: make sure to avoid conflicting column names
     start_end = "start_end"
     is_start_end = "is_start_or_end"
