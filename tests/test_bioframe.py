@@ -65,7 +65,7 @@ class TestBioframe:
         BIO_PD_DF1,
         cols=("contig", "pos_start", "pos_end"),
         min_dist=None
-    )
+    ).astype({"pos_start": "int32", "pos_end": "int32"}) # bioframe changes input types
 
 
     def test_overlap_count(self):
