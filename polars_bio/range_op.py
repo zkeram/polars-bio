@@ -367,6 +367,7 @@ def merge(
     """
     suffixes = ("_1", "_2")
     _validate_overlap_input(cols, cols, on_cols, suffixes, output_type, how="inner")
+
     my_ctx = get_py_ctx()
     cols = DEFAULT_INTERVAL_COLUMNS if cols is None else cols
     contig = cols[0]
@@ -377,37 +378,41 @@ def merge(
     on_cols = [contig] + on_cols
 
     df = read_df_to_datafusion(my_ctx, df)
-
     # TODO: make sure to avoid conflicting column names
     start_end = "start_end"
     is_start_end = "is_start_or_end"
     current_intervals = "current_intervals"
+    n_intervals = "n_intervals"
+
 
     start_positions = df.select(*([col(start).alias(start_end), literal(1).alias(is_start_end)] + on_cols))
     end_positions = df.select(*([(col(end) + min_dist).alias(start_end), literal(-1).alias(is_start_end)] + on_cols))
     start_positions = df.select(*([col(start).alias(start_end), literal(1).alias(is_start_end)] + on_cols))
-
     all_positions = start_positions.union(end_positions)
-
     start_end_type = all_positions.schema().field(start_end).type
-    all_positions = all_positions.select(*([col(start_end).cast(start_end_type), is_start_end] + on_cols))
+    all_positions = all_positions.select(*([col(start_end).cast(start_end_type), col(is_start_end)] + on_cols))
 
     sorting = [col(start_end).sort(), col(is_start_end).sort(ascending=(overlap_filter == FilterOp.Strict))]
     all_positions = all_positions.sort(*sorting)
+
+    on_cols_expr = [col(c) for c in on_cols]
+
+    win = datafusion.expr.Window(
+        partition_by=on_cols_expr,
+        order_by=sorting,
+    )
     all_positions = all_positions.select(*([start_end, is_start_end,
-        datafusion.functions.sum(col(is_start_end)).over(
-            datafusion.expr.Window(
-                partition_by=[col(c) for c in on_cols],
-                order_by=sorting,
-            )
-        ).alias(current_intervals)] + on_cols))
+        datafusion.functions.sum(col(is_start_end)).over(win).alias(current_intervals)] + on_cols +
+        [datafusion.functions.row_number(partition_by = on_cols_expr, order_by=sorting).alias(n_intervals)]))
     all_positions = all_positions.filter(
         ((col(current_intervals) == 0) & (col(is_start_end) == -1)) | ((col(current_intervals) == 1) & (col(is_start_end) == 1))
     )
+    all_positions = all_positions.select(*([start_end, is_start_end] + on_cols + [((col(n_intervals) - datafusion.functions.lag(col(n_intervals), partition_by=on_cols_expr) + 1) / 2).alias(n_intervals)]))
     result = all_positions.select(*([(col(start_end) - min_dist).alias(end), is_start_end,
-        datafusion.functions.lag(col(start_end), partition_by=[col(c) for c in on_cols]).alias(start)] + on_cols))
+        datafusion.functions.lag(col(start_end), partition_by=on_cols_expr).alias(start)] + on_cols + [n_intervals]))
     result = result.filter(col(is_start_end) == -1)
     result = result.select(*([start, end] + on_cols))
 
-    return convert_result(result, output_type, streaming)
+    result = result.select(*([contig, start, end] + on_cols[1:] + [n_intervals]))
 
+    return convert_result(result, output_type, streaming)
