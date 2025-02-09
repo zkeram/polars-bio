@@ -114,7 +114,9 @@ PD_DF_CLUSTER = (
     mdpd.from_md(EXPECTED_CLUSTER)
     .astype({"pos_start": "int64"})
     .astype({"pos_end": "int64"})
-    .astype({"n_intervals": "int64"})
+    .astype({"cluster": "int64"})
+    .astype({"cluster_start": "int64"})
+    .astype({"cluster_end": "int64"})
 )
 
 PD_DF_OVERLAP = PD_DF_OVERLAP.sort_values(by=list(PD_DF_OVERLAP.columns)).reset_index(
