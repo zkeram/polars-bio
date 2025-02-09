@@ -3,11 +3,13 @@ from _expected import (
     DF_NEAREST_PATH1,
     DF_NEAREST_PATH2,
     DF_MERGE_PATH,
+    DF_CLUSTER_PATH,
     DF_OVER_PATH1,
     DF_OVER_PATH2,
     PD_DF_NEAREST,
     PD_DF_OVERLAP,
     PD_DF_MERGE,
+    PD_DF_CLUSTER,
 )
 
 import polars_bio as pb
@@ -73,4 +75,23 @@ class TestMergeNative:
             drop=True
         )
         expected = PD_DF_MERGE
+        pd.testing.assert_frame_equal(result, expected)
+
+class TestClusterNative:
+    result = pb.cluster(
+        DF_CLUSTER_PATH,
+        cols=("contig", "pos_start", "pos_end"),
+        output_type="pandas.DataFrame",
+        overlap_filter=FilterOp.Strict,
+    )
+
+    def test_cluster_count(self):
+        print(self.result)
+        assert len(self.result) == len(PD_DF_CLUSTER)
+
+    def test_cluster_schema_rows(self):
+        result = self.result.sort_values(by=list(self.result.columns)).reset_index(
+            drop=True
+        )
+        expected = PD_DF_CLUSTER
         pd.testing.assert_frame_equal(result, expected)
