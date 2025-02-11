@@ -111,7 +111,7 @@ class TestBioframe:
         BIO_PD_DF2,
         cols1=("contig", "pos_start", "pos_end"),
         cols2=("contig", "pos_start", "pos_end"),
-        output_type="pandas.LazyFrame",
+        output_type="polars.LazyFrame",
     )
 
     result_bio_coverage = bf.coverage(
