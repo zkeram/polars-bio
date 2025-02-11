@@ -14,6 +14,7 @@ __all__ = [
     "overlap",
     "nearest",
     "coverage",
+    "pad",
     "merge",
     "cluster",
     "count_overlaps",

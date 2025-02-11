@@ -5,6 +5,7 @@ from _expected import (
     DF_COVERAGE_PATH1,
     DF_COVERAGE_PATH2,
     DF_MERGE_PATH,
+    DF_PAD_PATH,
     DF_CLUSTER_PATH,
     DF_OVER_PATH1,
     DF_OVER_PATH2,
@@ -14,6 +15,7 @@ from _expected import (
     PD_DF_COVERAGE,
     PD_DF_OVERLAP,
     PD_DF_MERGE,
+    PD_DF_PAD,
     PD_DF_CLUSTER,
     PD_DF_COUNT_OVERLAPS,
 )
@@ -81,6 +83,25 @@ class TestMergeNative:
             drop=True
         )
         expected = PD_DF_MERGE
+        pd.testing.assert_frame_equal(result, expected)
+
+class TestPadNative:
+    result = pb.pad(
+        DF_PAD_PATH,
+        10,
+        cols=("contig", "pos_start", "pos_end"),
+        output_type="pandas.DataFrame",
+    )
+
+    def test_pad_count(self):
+        print(self.result)
+        assert len(self.result) == len(PD_DF_PAD)
+
+    def test_pad_schema_rows(self):
+        result = self.result.sort_values(by=list(self.result.columns)).reset_index(
+            drop=True
+        )
+        expected = PD_DF_PAD
         pd.testing.assert_frame_equal(result, expected)
 
 class TestClusterNative:

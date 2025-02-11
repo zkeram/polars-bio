@@ -82,6 +82,24 @@ class TestBioframe:
         cols=("contig", "pos_start", "pos_end"),
         min_dist=None
     ) 
+    
+    result_pad = pb.pad(
+        BIO_PD_DF1,
+        -10,
+        cols=("contig", "pos_start", "pos_end"),
+        output_type="pandas.DataFrame",
+    )
+    result_pad_lf = pb.pad(
+        BIO_PD_DF1,
+        -10,
+        cols=("contig", "pos_start", "pos_end"),
+        output_type="polars.LazyFrame",
+    )
+    result_bio_pad = bf.expand(
+        BIO_PD_DF1,
+        pad=-10,
+        cols=("contig", "pos_start", "pos_end"),
+    ) 
 
     result_cluster = pb.cluster(
         BIO_PD_DF1,
@@ -144,6 +162,19 @@ class TestBioframe:
         ).reset_index(drop=True)
         result = self.result_merge.sort_values(
             by=list(self.result_merge.columns)
+        ).reset_index(drop=True)
+        pd.testing.assert_frame_equal(result, expected)
+    
+    def test_pad_count(self):
+        assert len(self.result_pad) == len(self.result_bio_pad)
+        assert len(self.result_pad_lf.collect()) == len(self.result_bio_pad)
+
+    def test_merge_schema_rows(self):
+        expected = self.result_bio_pad.sort_values(
+            by=list(self.result_pad.columns)
+        ).reset_index(drop=True)
+        result = self.result_pad.sort_values(
+            by=list(self.result_pad.columns)
         ).reset_index(drop=True)
         pd.testing.assert_frame_equal(result, expected)
         

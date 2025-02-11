@@ -3,6 +3,7 @@ from _expected import (
     PD_DF_NEAREST,
     PD_DF_COVERAGE,
     PD_DF_MERGE,
+    PD_DF_PAD,
     PD_DF_CLUSTER,
     PD_DF_OVERLAP,
     PD_DF_COUNT_OVERLAPS,
@@ -11,6 +12,7 @@ from _expected import (
     PD_COVERAGE_DF1,
     PD_COVERAGE_DF2,
     PD_MERGE_DF,
+    PD_PAD_DF,
     PD_CLUSTER_DF,
     PD_OVERLAP_DF1,
     PD_OVERLAP_DF2,
@@ -78,6 +80,24 @@ class TestMergePandas:
             drop=True
         )
         expected = PD_DF_MERGE
+        pd.testing.assert_frame_equal(result, expected)
+
+class TestPadPandas:
+    result = pb.pad(
+        PD_PAD_DF,
+        10,
+        cols=("contig", "pos_start", "pos_end"),
+        output_type="pandas.DataFrame",
+    )
+
+    def test_pad_count(self):
+        assert len(self.result) == len(PD_DF_PAD)
+
+    def test_pad_schema_rows(self):
+        result = self.result.sort_values(by=list(self.result.columns)).reset_index(
+            drop=True
+        )
+        expected = PD_DF_PAD
         pd.testing.assert_frame_equal(result, expected)
 
 class TestClusterPandas:

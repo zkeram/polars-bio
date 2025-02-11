@@ -4,6 +4,7 @@ from _expected import (
     PL_DF_NEAREST,
     PL_DF_COVERAGE,
     PL_DF_MERGE,
+    PL_DF_PAD,
     PL_DF_COUNT_OVERLAPS,
     PL_DF_OVERLAP,
     PL_DF_CLUSTER,
@@ -12,6 +13,7 @@ from _expected import (
     PL_COVERAGE_DF1,
     PL_COVERAGE_DF2,
     PL_MERGE_DF,
+    PL_PAD_DF,
     PL_CLUSTER_DF,
     PL_COUNT_OVERLAPS_DF1,
     PL_COUNT_OVERLAPS_DF2,
@@ -104,6 +106,33 @@ class TestMergePolars:
         assert self.expected.equals(result)
 
     def test_merge_schema_rows_lazy(self):
+        result = self.result_lazy.sort(by=self.result_lazy.columns)
+        assert self.expected.equals(result)
+
+class TestPadPolars:
+    result_frame = pb.pad(
+        PL_PAD_DF,
+        10,
+        output_type="polars.DataFrame",
+        cols=("contig", "pos_start", "pos_end"),
+    )
+    result_lazy = pb.pad(
+        PL_PAD_DF,
+        10,
+        output_type="polars.LazyFrame",
+        cols=("contig", "pos_start", "pos_end"),
+    ).collect()
+    expected = PL_DF_PAD
+
+    def test_pad_count(self):
+        assert len(self.result_frame) == len(PL_DF_PAD)
+        assert len(self.result_lazy) == len(PL_DF_PAD)
+
+    def test_pad_schema_rows(self):
+        result = self.result_frame.sort(by=self.result_frame.columns)
+        assert self.expected.equals(result)
+
+    def test_pad_schema_rows_lazy(self):
         result = self.result_lazy.sort(by=self.result_lazy.columns)
         assert self.expected.equals(result)
 

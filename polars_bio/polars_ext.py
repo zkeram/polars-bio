@@ -91,6 +91,23 @@ class PolarsRangesOperations:
             cols=cols
         )
     
+    def pad(
+        self,
+        size: int,
+        side: str = 'both'
+        cols: Union[list[str], None] = None,
+    ) -> pl.LazyFrame:
+        """
+        !!! note
+            Alias for [pad](api.md#polars_bio.pad)
+        """
+        return pb.pad(
+            self._ldf,
+            size,
+            side=side,
+            cols=cols,
+        )
+    
     def cluster(
         self,
         overlap_filter: FilterOp = FilterOp.Strict,

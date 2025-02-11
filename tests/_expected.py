@@ -103,6 +103,33 @@ EXPECTED_COVERAGE = """
 | chr3     |         100 |       200 |          0 |
 """
 
+EXPECTED_PAD = """
+| contig   |   pos_start |   pos_end |
+|:---------|------------:|----------:|
+| chr1     |         140 |       260 |
+| chr1     |         180 |       310 |
+| chr1     |         290 |       511 |
+| chr1     |         490 |       710 |
+| chr1     |       21990 |     22310 |
+| chr1     |       14990 |     15011 |
+| chr2     |         140 |       260 |
+| chr2     |         180 |       310 |
+| chr2     |         290 |       510 |
+| chr2     |         490 |       710 |
+| chr2     |       21990 |     22310 |
+| chr2     |       14990 |     15011 |
+| chr1     |          90 |       200 |
+| chr1     |         190 |       300 |
+| chr1     |         390 |       610 |
+| chr1     |        9990 |     20010 |
+| chr1     |       22090 |     22111 |
+| chr2     |          90 |       200 |
+| chr2     |         190 |       300 |
+| chr2     |         390 |       610 |
+| chr2     |        9990 |     20010 |
+| chr2     |       22090 |     22111 |
+"""
+
 EXPECTED_COUNT_OVERLAPS = """
         +--------+-----------+---------+-------+
         | contig | pos_start | pos_end | count |
@@ -143,6 +170,11 @@ PD_DF_MERGE = (
     .astype({"pos_end": "int64"})
     .astype({"n_intervals": "int64"})
 )
+PD_DF_PAD = (
+    mdpd.from_md(EXPECTED_PAD)
+    .astype({"pos_start": "int64"})
+    .astype({"pos_end": "int64"})
+)
 PD_DF_COUNT_OVERLAPS = (
     mdpd.from_md(EXPECTED_COUNT_OVERLAPS)
     .astype({"pos_start": "int64"})
@@ -176,6 +208,9 @@ PD_DF_NEAREST = PD_DF_NEAREST.sort_values(by=list(PD_DF_NEAREST.columns)).reset_
 PD_DF_MERGE = PD_DF_MERGE.sort_values(by=list(PD_DF_MERGE.columns)).reset_index(
     drop=True
 )
+PD_DF_PAD = PD_DF_PAD.sort_values(by=list(PD_DF_PAD.columns)).reset_index(
+    drop=True
+)
 PD_DF_CLUSTER = PD_DF_CLUSTER.sort_values(by=list(PD_DF_CLUSTER.columns)).reset_index(
     drop=True
 )
@@ -198,6 +233,9 @@ PD_NEAREST_DF2 = pd.read_csv(DF_NEAREST_PATH2)
 
 DF_MERGE_PATH = f"{DATA_DIR}/merge/input.csv"
 PD_MERGE_DF = pd.read_csv(DF_MERGE_PATH)
+
+DF_PAD_PATH = f"{DATA_DIR}/pad/input.csv"
+PD_PAD_DF = pd.read_csv(DF_PAD_PATH)
 
 DF_COUNT_OVERLAPS_PATH1 = f"{DATA_DIR}/count_overlaps/targets.csv"
 DF_COUNT_OVERLAPS_PATH2 = f"{DATA_DIR}/count_overlaps/reads.csv"
@@ -228,8 +266,11 @@ PL_NEAREST_DF2 = pl.DataFrame(PD_NEAREST_DF2)
 PL_DF_MERGE = pl.DataFrame(PD_DF_MERGE)
 PL_MERGE_DF = pl.DataFrame(PD_MERGE_DF)
 
+PL_DF_PAD = pl.DataFrame(PD_DF_PAD)
+PL_PAD_DF = pl.DataFrame(PD_PAD_DF)
+
 PL_DF_CLUSTER = pl.DataFrame(PD_DF_CLUSTER)
-PL_CLUSTER_DF = pl.DataFrame(PD_MERGE_DF)
+PL_CLUSTER_DF = pl.DataFrame(PD_CLUSTER_DF)
 
 PL_DF_COVERAGE = pl.DataFrame(PD_DF_COVERAGE)
 PL_COVERAGE_DF1 = pl.DataFrame(PD_COVERAGE_DF1)

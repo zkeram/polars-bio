@@ -13,7 +13,7 @@ import datafusion
 from datafusion import col, literal
 import pyarrow
 
-__all__ = ["overlap", "nearest", "merge", "cluster", "coverage", "count_overlaps"]
+__all__ = ["overlap", "nearest", "merge", "cluster", "coverage", "count_overlaps", "pad"]
 
 
 if TYPE_CHECKING:
@@ -628,4 +628,59 @@ def count_overlaps(
 
     return convert_result(df, output_type, streaming)
 
+
+def pad(
+    df: Union[str, pl.DataFrame, pl.LazyFrame, pd.DataFrame, datafusion.dataframe.DataFrame],
+    size: int,
+    side: str = 'both',
+    cols: Union[list[str], None] = None,
+    output_type: str = "polars.LazyFrame",
+    streaming: bool = False,
+) -> Union[pl.LazyFrame, pl.DataFrame, pd.DataFrame, datafusion.dataframe.DataFrame]:
+    """
+    Expand each interval by changing its ends by `size`.
+
+    Parameters:
+        df: Can be a path to a file, a polars DataFrame, or a pandas DataFrame. CSV with a header, BED  and Parquet are supported.
+        overlap_filter: FilterOp, optional. The type of overlap to consider(Weak or Strict).
+        size: The size by which each interval start and end is expanded.
+        side: What side needs to be expanded. Possible values are 'left' (start), 'right' (end), 'both' (start and end)
+        cols: The names of columns containing the chromosome, start and end of the
+            genomic intervals, provided separately for each set.
+        output_type: Type of the output. default is "polars.LazyFrame", "polars.DataFrame", or "pandas.DataFrame" are also supported.
+        streaming: **EXPERIMENTAL** If True, use Polars [streaming](features.md#streaming-out-of-core-processing) engine.
+
+    Returns:
+        **polars.LazyFrame** or polars.DataFrame or pandas.DataFrame of the overlapping intervals.
+
+    Example:
+    """
+    on_cols = None
+    suffixes = ("_1", "_2")
+    _validate_overlap_input(cols, cols, on_cols, suffixes, output_type, how="inner")
+    my_ctx = get_py_ctx()
+    cols = DEFAULT_INTERVAL_COLUMNS if cols is None else cols
+    contig = cols[0]
+    start = cols[1]
+    end = cols[2]
+    
+    df = read_df_to_datafusion(my_ctx, df)
+    
+    all_cols = [c for c in df.schema().names if (c not in [contig, start, end])]
+    start_expr = col(start)
+    mid_point = (col(start) + col(end)) / 2
+    if side == 'left' or side == 'both':
+        start_expr = start_expr - size
+        if size < 0:
+            # min(start_expr, mid_point)
+            start_expr = (start_expr + mid_point - datafusion.functions.abs(start_expr - mid_point)) / 2
+    end_expr = col(end)
+    if side == 'right' or side == 'both':
+        end_expr = end_expr + size
+        if size < 0:
+            # max(end_expr, mid_point)
+            end_expr = (end_expr + mid_point + datafusion.functions.abs(end_expr - mid_point)) / 2
+    df = df.select(contig, start_expr.alias(start), end_expr.alias(end), *all_cols)
+    
+    return convert_result(df, output_type, streaming)
 
