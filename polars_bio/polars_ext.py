@@ -94,7 +94,7 @@ class PolarsRangesOperations:
     def pad(
         self,
         size: int,
-        side: str = 'both'
+        side: str = 'both',
         cols: Union[list[str], None] = None,
     ) -> pl.LazyFrame:
         """
