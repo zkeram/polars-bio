@@ -7,14 +7,10 @@ import polars as pl
 import pyarrow as pa
 import pyarrow.compute as pc
 from polars.io.plugins import register_io_source
-from .range_wrappers import range_operation_scan_wrapper, range_operation_frame_wrapper
 
-from polars_bio.polars_bio import (
-    BioSessionContext,
-    RangeOptions,
-    range_operation_frame,
-    range_operation_scan,
-)
+from polars_bio.polars_bio import BioSessionContext, RangeOptions
+
+from .range_wrappers import range_operation_frame_wrapper, range_operation_scan_wrapper
 
 
 def range_lazy_scan(

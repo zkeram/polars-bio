@@ -79,6 +79,22 @@ class TestBioframe:
         suffixes=("", "_"),
     )
 
+    result_merge = pb.merge(
+        BIO_PD_DF1,
+        cols=("contig", "pos_start", "pos_end"),
+        output_type="pandas.DataFrame",
+    )
+    result_merge_lf = pb.merge(
+        BIO_PD_DF1,
+        cols=("contig", "pos_start", "pos_end"),
+        output_type="polars.LazyFrame",
+    )
+    result_bio_merge = bf.merge(
+        BIO_PD_DF1, cols=("contig", "pos_start", "pos_end"), min_dist=None
+    ).astype(
+        {"pos_start": "int32", "pos_end": "int32"}
+    )  # bioframe changes input types
+
     def test_overlap_count(self):
         assert len(self.result_overlap) == len(self.result_bio_overlap)
         assert len(self.result_overlap_lf.collect()) == len(self.result_bio_overlap)
@@ -126,5 +142,18 @@ class TestBioframe:
         )
         result = self.result_count_overlaps.sort_values(
             by=list(self.result_count_overlaps.columns)
+        ).reset_index(drop=True)
+        pd.testing.assert_frame_equal(result, expected)
+
+    def test_merge_count(self):
+        assert len(self.result_merge) == len(self.result_bio_merge)
+        assert len(self.result_merge_lf.collect()) == len(self.result_bio_merge)
+
+    def test_merge_schema_rows(self):
+        expected = self.result_bio_merge.sort_values(
+            by=list(self.result_merge.columns)
+        ).reset_index(drop=True)
+        result = self.result_merge.sort_values(
+            by=list(self.result_merge.columns)
         ).reset_index(drop=True)
         pd.testing.assert_frame_equal(result, expected)

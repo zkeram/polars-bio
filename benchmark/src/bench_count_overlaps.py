@@ -116,7 +116,9 @@ def bioframe(df_1, df_2):
 
 
 def polars_bio(df_path_1, df_path_2):
-    pb.count_overlaps(df_path_1, df_path_2, col1=columns, col2=columns).collect().count()
+    pb.count_overlaps(
+        df_path_1, df_path_2, col1=columns, col2=columns
+    ).collect().count()
 
 
 def pyranges0(df_1_pr0, df_2_pr0):

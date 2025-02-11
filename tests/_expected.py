@@ -47,6 +47,19 @@ EXPECTED_NEAREST = """
         +--------+-----------+---------+--------+-----------+---------+----------+
 """
 
+EXPECTED_MERGE = """
+| contig   |   pos_start |   pos_end |   n_intervals |
+|:---------|------------:|----------:|--------------:|
+| chr1     |         100 |       300 |             4 |
+| chr1     |         300 |       700 |             3 |
+| chr1     |       10000 |     20000 |             2 |
+| chr1     |       22000 |     22300 |             2 |
+| chr2     |         100 |       300 |             4 |
+| chr2     |         300 |       700 |             3 |
+| chr2     |       10000 |     20000 |             2 |
+| chr2     |       22000 |     22300 |             2 |
+"""
+
 EXPECTED_COUNT_OVERLAPS = """
         +--------+-----------+---------+-------+
         | contig | pos_start | pos_end | count |
@@ -81,6 +94,12 @@ PD_DF_NEAREST = (
     .astype({"pos_end_2": "int64"})
     .astype({"distance": "int64"})
 )
+PD_DF_MERGE = (
+    mdpd.from_md(EXPECTED_MERGE)
+    .astype({"pos_start": "int64"})
+    .astype({"pos_end": "int64"})
+    .astype({"n_intervals": "int64"})
+)
 PD_DF_COUNT_OVERLAPS = (
     mdpd.from_md(EXPECTED_COUNT_OVERLAPS)
     .astype({"pos_start": "int64"})
@@ -95,9 +114,12 @@ PD_DF_OVERLAP = PD_DF_OVERLAP.sort_values(by=list(PD_DF_OVERLAP.columns)).reset_
 PD_DF_NEAREST = PD_DF_NEAREST.sort_values(by=list(PD_DF_NEAREST.columns)).reset_index(
     drop=True
 )
-PD_DF_COUNT_OVERLAPS = PD_DF_COUNT_OVERLAPS.sort_values(by=list(PD_DF_COUNT_OVERLAPS.columns)).reset_index(
+PD_DF_MERGE = PD_DF_MERGE.sort_values(by=list(PD_DF_MERGE.columns)).reset_index(
     drop=True
 )
+PD_DF_COUNT_OVERLAPS = PD_DF_COUNT_OVERLAPS.sort_values(
+    by=list(PD_DF_COUNT_OVERLAPS.columns)
+).reset_index(drop=True)
 
 DF_OVER_PATH1 = f"{DATA_DIR}/overlap/reads.csv"
 DF_OVER_PATH2 = f"{DATA_DIR}/overlap/targets.csv"
@@ -109,6 +131,8 @@ DF_NEAREST_PATH2 = f"{DATA_DIR}/nearest/reads.csv"
 PD_NEAREST_DF1 = pd.read_csv(DF_NEAREST_PATH1)
 PD_NEAREST_DF2 = pd.read_csv(DF_NEAREST_PATH2)
 
+DF_MERGE_PATH = f"{DATA_DIR}/merge/input.csv"
+PD_MERGE_DF = pd.read_csv(DF_MERGE_PATH)
 DF_COUNT_OVERLAPS_PATH1 = f"{DATA_DIR}/count_overlaps/targets.csv"
 DF_COUNT_OVERLAPS_PATH2 = f"{DATA_DIR}/count_overlaps/reads.csv"
 PD_COUNT_OVERLAPS_DF1 = pd.read_csv(DF_COUNT_OVERLAPS_PATH1)
@@ -127,6 +151,9 @@ PL_DF2 = pl.DataFrame(PD_OVERLAP_DF2)
 PL_DF_NEAREST = pl.DataFrame(PD_DF_NEAREST)
 PL_NEAREST_DF1 = pl.DataFrame(PD_NEAREST_DF1)
 PL_NEAREST_DF2 = pl.DataFrame(PD_NEAREST_DF2)
+
+PL_DF_MERGE = pl.DataFrame(PD_DF_MERGE)
+PL_MERGE_DF = pl.DataFrame(PD_MERGE_DF)
 
 PL_DF_COUNT_OVERLAPS = pl.DataFrame(PD_DF_COUNT_OVERLAPS)
 PL_COUNT_OVERLAPS_DF1 = pl.DataFrame(PD_COUNT_OVERLAPS_DF1)
