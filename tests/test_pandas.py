@@ -1,11 +1,14 @@
 import pandas as pd
 from _expected import (
     PD_DF_NEAREST,
+    PD_DF_COVERAGE,
     PD_DF_MERGE,
     PD_DF_CLUSTER,
     PD_DF_OVERLAP,
     PD_NEAREST_DF1,
-    PD_NEAREST_DF2,
+    PD_NEAREST_DF1,
+    PD_COVERAGE_DF2,
+    PD_COVERAGE_DF2,
     PD_MERGE_DF,
     PD_CLUSTER_DF,
     PD_OVERLAP_DF1,
@@ -89,4 +92,23 @@ class TestClusterPandas:
             drop=True
         )
         expected = PD_DF_CLUSTER
+        pd.testing.assert_frame_equal(result, expected)
+
+class TestCoveragePandas:
+    result = pb.coverage(
+        PD_COVERAGE_DF1,
+        PD_COVERAGE_DF2,
+        cols1=("contig", "pos_start", "pos_end"),
+        cols2=("contig", "pos_start", "pos_end"),
+        output_type="pandas.DataFrame",
+    )
+
+    def test_coverage_count(self):
+        assert len(self.result) == len(PD_DF_COVERAGE)
+
+    def test_coverage_schema_rows(self):
+        result = self.result.sort_values(by=list(self.result.columns)).reset_index(
+            drop=True
+        )
+        expected = PD_DF_COVERAGE
         pd.testing.assert_frame_equal(result, expected)

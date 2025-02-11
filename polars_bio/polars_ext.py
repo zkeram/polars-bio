@@ -54,6 +54,25 @@ class PolarsRangesOperations:
             cols1=cols1,
             cols2=cols2,
         )
+    
+    def coverage(
+        self,
+        other_df: pl.LazyFrame,
+        suffixes: tuple[str, str] = ("", "_"),
+        cols1=["chrom", "start", "end"],
+        cols2=["chrom", "start", "end"],
+    ) -> pl.LazyFrame:
+        """
+        !!! note
+            Alias for [coverage](api.md#polars_bio.coverage)
+        """
+        return pb.coverage(
+            self._ldf,
+            other_df,
+            suffixes=suffixes,
+            cols1=cols1,
+            cols2=cols2,
+        )
 
     def merge(
         self,

@@ -87,6 +87,22 @@ EXPECTED_CLUSTER = """
 | chr2     |       22100 |     22101 |         7 |           22000 |         22300 |
 """
 
+EXPECTED_COVERAGE = """
+| contig   |   pos_start |   pos_end |   coverage |
+|:---------|------------:|----------:|-----------:|
+| chr1     |         100 |       190 |         40 |
+| chr1     |         200 |       290 |         90 |
+| chr1     |         400 |       600 |        200 |
+| chr1     |       10000 |     20000 |          0 |
+| chr1     |       22100 |     22100 |          0 |
+| chr2     |         100 |       190 |         40 |
+| chr2     |         200 |       290 |         90 |
+| chr2     |         400 |       600 |        200 |
+| chr2     |       10000 |     20000 |          0 |
+| chr2     |       22100 |     22100 |          0 |
+| chr3     |         100 |       200 |          0 |
+"""
+
 # Pandas
 PD_DF_OVERLAP = (
     mdpd.from_md(EXPECTED_OVERLAP)
@@ -119,6 +135,14 @@ PD_DF_CLUSTER = (
     .astype({"cluster_end": "int64"})
 )
 
+PD_DF_COVERAGE = (
+    mdpd.from_md(EXPECTED_COVERAGE).astype({
+        "pos_start": "int64",
+        "pos_end": "int64",
+        "coverage": "int64",
+    })
+)
+
 PD_DF_OVERLAP = PD_DF_OVERLAP.sort_values(by=list(PD_DF_OVERLAP.columns)).reset_index(
     drop=True
 )
@@ -129,6 +153,9 @@ PD_DF_MERGE = PD_DF_MERGE.sort_values(by=list(PD_DF_MERGE.columns)).reset_index(
     drop=True
 )
 PD_DF_CLUSTER = PD_DF_CLUSTER.sort_values(by=list(PD_DF_CLUSTER.columns)).reset_index(
+    drop=True
+)
+PD_DF_COVERAGE = PD_DF_COVERAGE.sort_values(by=list(PD_DF_COVERAGE.columns)).reset_index(
     drop=True
 )
 
@@ -148,6 +175,11 @@ PD_MERGE_DF = pd.read_csv(DF_MERGE_PATH)
 DF_CLUSTER_PATH = f"{DATA_DIR}/cluster/input.csv"
 PD_CLUSTER_DF = pd.read_csv(DF_CLUSTER_PATH)
 
+DF_COVERAGE_PATH1 = f"{DATA_DIR}/coverage/reads.csv"
+DF_COVERAGE_PATH2 = f"{DATA_DIR}/coverage/targets.csv"
+PD_COVERAGE_DF1 = pd.read_csv(DF_COVERAGE_PATH1)
+PD_COVERAGE_DF2 = pd.read_csv(DF_COVERAGE_PATH2)
+
 BIO_PD_DF1 = pd.read_parquet(f"{DATA_DIR}/exons/").astype({"pos_start": "int64", "pos_end": "int64"})
 BIO_PD_DF2 = pd.read_parquet(f"{DATA_DIR}/fBrain-DS14718/").astype({"pos_start": "int64", "pos_end": "int64"})
 
@@ -166,3 +198,7 @@ PL_MERGE_DF = pl.DataFrame(PD_MERGE_DF)
 
 PL_DF_CLUSTER = pl.DataFrame(PD_DF_CLUSTER)
 PL_CLUSTER_DF = pl.DataFrame(PD_MERGE_DF)
+
+PL_DF_COVERAGE = pl.DataFrame(PD_DF_COVERAGE)
+PL_COVERAGE_DF1 = pl.DataFrame(PD_COVERAGE_DF1)
+PL_COVERAGE_DF2 = pl.DataFrame(PD_COVERAGE_DF2)

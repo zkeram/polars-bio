@@ -13,7 +13,7 @@ import datafusion
 from datafusion import col, literal
 import pyarrow
 
-__all__ = ["overlap", "nearest", "merge", "cluster"]
+__all__ = ["overlap", "nearest", "merge", "cluster", "coverage"]
 
 
 if TYPE_CHECKING:
@@ -164,14 +164,14 @@ def nearest(
     return range_operation(df1, df2, range_options, output_type, ctx)
 
 def merge(
-    df: Union[str, pl.DataFrame, pl.LazyFrame, pd.DataFrame],
+    df: Union[str, pl.DataFrame, pl.LazyFrame, pd.DataFrame, datafusion.dataframe.DataFrame],
     overlap_filter: FilterOp = FilterOp.Strict,
     min_dist: float = 0,
     cols: Union[list[str], None] = ["chrom", "start", "end"],
     on_cols: Union[list[str], None] = None,
     output_type: str = "polars.LazyFrame",
     streaming: bool = False,
-) -> Union[pl.LazyFrame, pl.DataFrame, pd.DataFrame]:
+) -> Union[pl.LazyFrame, pl.DataFrame, pd.DataFrame, datafusion.dataframe.DataFrame]:
     """
     Merge overlapping intervals. It is assumed that start < end.
 
@@ -247,14 +247,14 @@ def merge(
     return convert_result(result, output_type, streaming)
 
 def cluster(
-    df: Union[str, pl.DataFrame, pl.LazyFrame, pd.DataFrame],
+    df: Union[str, pl.DataFrame, pl.LazyFrame, pd.DataFrame, datafusion.dataframe.DataFrame],
     overlap_filter: FilterOp = FilterOp.Strict,
     min_dist: float = 0,
     cols: Union[list[str], None] = ["chrom", "start", "end"],
     on_cols: Union[list[str], None] = None,
     output_type: str = "polars.LazyFrame",
     streaming: bool = False,
-) -> Union[pl.LazyFrame, pl.DataFrame, pd.DataFrame]:
+) -> Union[pl.LazyFrame, pl.DataFrame, pd.DataFrame, datafusion.dataframe.DataFrame]:
     """
     Merge overlapping intervals. It is assumed that start < end.
 
@@ -373,3 +373,142 @@ def cluster(
         cluster_end]))
     return convert_result(all_positions, output_type, streaming)
 
+
+
+def coverage(
+    df1: Union[str, pl.DataFrame, pl.LazyFrame, pd.DataFrame, datafusion.dataframe.DataFrame],
+    df2: Union[str, pl.DataFrame, pl.LazyFrame, pd.DataFrame, datafusion.dataframe.DataFrame],
+    suffixes: tuple[str, str] = ("", "_"),
+    return_input: bool = True,
+    cols1: Union[list[str], None] = ["chrom", "start", "end"],
+    cols2: Union[list[str], None] = ["chrom", "start", "end"],
+    on_cols: Union[list[str], None] = None,
+    output_type: str = "polars.LazyFrame",
+    streaming: bool = False,
+) -> Union[pl.LazyFrame, pl.DataFrame, pd.DataFrame, datafusion.dataframe.DataFrame]:
+    """
+    Count coverage of intervals.
+    Bioframe inspired API.
+
+    Parameters:
+        df1: Can be a path to a file, a polars DataFrame, or a pandas DataFrame. CSV with a header, BED and Parquet are supported.
+        df2: Can be a path to a file, a polars DataFrame, or a pandas DataFrame. CSV with a header, BED  and Parquet are supported.
+        suffixes: Suffixes for the columns of the two overlapped sets.
+        return_input: If true, return input.
+        cols1: The names of columns containing the chromosome, start and end of the
+            genomic intervals, provided separately for each set.
+        cols2:  The names of columns containing the chromosome, start and end of the
+            genomic intervals, provided separately for each set.
+        on_cols: List of additional column names to join on. default is None.
+        output_type: Type of the output. default is "polars.LazyFrame", "polars.DataFrame", or "pandas.DataFrame" are also supported.
+        streaming: **EXPERIMENTAL** If True, use Polars [streaming](features.md#streaming-out-of-core-processing) engine.
+
+    Returns:
+        **polars.LazyFrame** or polars.DataFrame or pandas.DataFrame of the overlapping intervals.
+
+    Example:
+
+    Todo:
+         Support return_input.
+     """
+    #_validate_overlap_input(cols1, cols2, on_cols, suffixes, output_type, how="inner")
+    my_ctx = get_py_ctx()
+    on_cols = [] if on_cols is None else on_cols
+    cols1 = DEFAULT_INTERVAL_COLUMNS if cols1 is None else cols1
+    cols2 = DEFAULT_INTERVAL_COLUMNS if cols2 is None else cols2
+    if naive_query:
+        range_options = RangeOptions(
+            range_op=NaiveRangeQuery,
+            filter_op=overlap_filter,
+            suffixes=suffixes,
+            columns_1=cols1,
+            columns_2=cols2,
+            streaming=streaming,
+        )
+        return range_operation(df1, df2, range_options, output_type, ctx)
+    cols1 = list(cols1)
+    cols2 = list(cols2)
+    df1 = read_df_to_datafusion(my_ctx, df1)
+    df2 = read_df_to_datafusion(my_ctx, df2)
+
+    df2 = merge(df2, output_type="datafusion.DataFrame", cols=cols2, on_cols=on_cols)
+
+    # TODO: guarantee no collisions
+    contig = "contig"
+    row_id = "row_id"
+    interval_counter = "interval_counter"
+    interval_sum = "interval_sum"
+    position = "position"
+    coverage = "coverage"
+
+    suff, _ = suffixes
+
+    df1 = df1.select(*([(literal(2) * datafusion.functions.row_number()).alias(row_id)] + cols1 + on_cols))
+
+    df1_starts = df1.select(*([
+        row_id,
+        col(cols1[0]).alias(contig),
+        col(cols1[1]).alias(position),
+        literal(0).alias(interval_counter),
+        literal(0).alias(interval_sum)] + on_cols))
+    df1_ends = df1.select(*([
+        (col(row_id) + 1).alias(row_id),
+        col(cols1[0]).alias(contig),
+        col(cols1[2]).alias(position),
+        literal(0).alias(interval_counter),
+        literal(0).alias(interval_sum)] + on_cols))
+
+    df2_starts = df2.select(*([
+        literal(0).alias(row_id),
+        col(cols2[0]).alias(contig),
+        col(cols2[1]).alias(position),
+        literal(1).alias(interval_counter),
+        (literal(0) - col(cols2[1])).alias(interval_sum)] + on_cols))
+    df2_ends = df2.select(*([
+        literal(0).alias(row_id),
+        col(cols2[0]).alias(contig),
+        col(cols2[2]).alias(position),
+        literal(-1).alias(interval_counter),
+        col(cols2[2]).alias(interval_sum)] + on_cols))
+
+    df = df1_starts.union(df1_ends).union(df2_starts).union(df2_ends)
+
+    on_cols = [contig] + on_cols
+    on_cols_expr = [col(c) for c in on_cols]
+
+    win = datafusion.expr.Window(
+        partition_by=on_cols_expr,
+        order_by=[col(position).sort()]
+    )
+
+    df = df.select(*([
+        row_id,
+        position,
+        datafusion.functions.sum(col(interval_counter)).over(win).alias(interval_counter),
+        datafusion.functions.sum(col(interval_sum)).over(win).alias(interval_sum),
+        ] + on_cols))
+    df = df.select(*([
+        row_id,
+        position,
+        ((col(interval_counter) * col(position)) + col(interval_sum)).alias(interval_sum),
+        ] + on_cols))
+    df = df.filter(col(row_id) > 0)
+    df = df.sort(col(row_id))
+
+    start_result = cols1[1] + suff
+    end_result = cols1[2] + suff
+
+    df = df.select(*([
+        row_id,
+        col(position).alias(start_result),
+        datafusion.functions.lead(col(position)).alias(end_result),
+        (datafusion.functions.lead(col(interval_sum)) - col(interval_sum)).alias(coverage)
+        ] + on_cols))
+    df = df.filter((col(row_id) % 2) == 0)
+    df = df.select(*([
+        col(contig).alias(cols1[0] + suff),
+        start_result,
+        end_result] + on_cols[1:] + [
+        coverage]))
+
+    return convert_result(df, output_type, streaming)

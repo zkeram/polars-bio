@@ -169,3 +169,37 @@ class TestPolarsExt:
         print(df_3.columns)
         print(df_4.columns)
         pd.testing.assert_frame_equal(df_3, df_4, check_dtype=False)
+    def test_coverage(self):
+        cols = ("chrom", "start", "end")
+        df_1 = (
+            pb.read_table(self.file, schema="bed9")
+            .select(cols)
+            .collect()
+            .to_pandas()
+            .reset_index(drop=True)
+        )
+        df_2 = (
+            pb.read_table(self.file, schema="bed9")
+            .select(cols)
+            .collect()
+            .to_pandas()
+            .reset_index(drop=True)
+        )
+        df_3 = (
+            bf.coverage(df_1, df_2, suffixes=("_1", "_2"))
+            .sort_values(by=["chrom_1", "start_1", "end_1"])
+            .reset_index(drop=True)
+        )
+        #
+        df_4 = (
+            pl.DataFrame(df_1)
+            .lazy()
+            .pb.coverage(pl.DataFrame(df_2).lazy(), suffixes=("_1", "_2"))
+            .collect()
+            .to_pandas()
+            .sort_values(by=["chrom_1", "start_1", "end_1"])
+            .reset_index(drop=True)
+        )
+        print(df_3.columns)
+        print(df_4.columns)
+        pd.testing.assert_frame_equal(df_3, df_4, check_dtype=False)

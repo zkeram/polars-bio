@@ -82,6 +82,28 @@ class TestBioframe:
         cols=("contig", "pos_start", "pos_end"),
         min_dist=None
     ) 
+    
+    result_coverage = pb.coverage(
+        BIO_PD_DF1,
+        BIO_PD_DF2,
+        cols1=("contig", "pos_start", "pos_end"),
+        cols2=("contig", "pos_start", "pos_end"),
+        output_type="pandas.DataFrame",
+    )
+    result_coverage_lf = pb.coverage(
+        BIO_PD_DF1,
+        BIO_PD_DF2,
+        cols1=("contig", "pos_start", "pos_end"),
+        cols2=("contig", "pos_start", "pos_end"),
+        output_type="pandas.LazyFrame",
+    )
+
+    result_bio_coverage = bf.coverage(
+        BIO_PD_DF1,
+        BIO_PD_DF2,
+        cols1=("contig", "pos_start", "pos_end"),
+        cols2=("contig", "pos_start", "pos_end"),
+    )
 
     def test_overlap_count(self):
         assert len(self.result_overlap) == len(self.result_bio_overlap)
@@ -122,3 +144,15 @@ class TestBioframe:
         ).reset_index(drop=True)
         pd.testing.assert_frame_equal(result, expected)
         
+    def test_coverage_count(self):
+        assert len(self.result_coverage) == len(self.result_bio_coverage)
+        assert len(self.result_coverage_lf.collect()) == len(self.result_bio_coverage
+
+    def test_coverage_schema_rows(self):
+        expected = self.result_bio_coverage.sort_values(
+            by=list(self.result_coverage.columns)
+        ).reset_index(drop=True)
+        result = self.result_coverage.sort_values(
+            by=list(self.result_coverage.columns)
+        ).reset_index(drop=True)
+        pd.testing.assert_frame_equal(result, expected)
