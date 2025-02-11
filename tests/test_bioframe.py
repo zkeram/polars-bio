@@ -50,6 +50,22 @@ class TestBioframe:
         cols2=("contig", "pos_start", "pos_end"),
         suffixes=("_1", "_2"),
     )
+    
+    resust_count_overlaps = pb.count_overlaps(
+        BIO_PD_DF1,
+        BIO_PD_DF2,
+        cols1=("contig", "pos_start", "pos_end"),
+        cols2=("contig", "pos_start", "pos_end"),
+        overlap_filter=FilterOp.Strict,
+        output_type="pandas.DataFrame",
+    )
+    result_bio_count_overlaps = bf.count_overlaps(
+        BIO_PD_DF1,
+        BIO_PD_DF2,
+        cols1=("contig", "pos_start", "pos_end"),
+        cols2=("contig", "pos_start", "pos_end"),
+        suffixes=("", "_"),
+    )
 
     def test_overlap_count(self):
         assert len(self.result_overlap) == len(self.result_bio_overlap)

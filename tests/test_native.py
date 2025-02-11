@@ -4,8 +4,11 @@ from _expected import (
     DF_NEAREST_PATH2,
     DF_OVER_PATH1,
     DF_OVER_PATH2,
+    DF_COUNT_OVERLAPS_PATH1,
+    DF_COUNT_OVERLAPS_PATH2,
     PD_DF_NEAREST,
     PD_DF_OVERLAP,
+    PD_DF_COUNT_OVERLAPS,
 )
 
 import polars_bio as pb
@@ -52,4 +55,25 @@ class TestNearestNative:
             drop=True
         )
         expected = PD_DF_NEAREST
+        pd.testing.assert_frame_equal(result, expected)
+
+class TestCountOverlapsNative:
+    result = pb.count_overlaps(
+        DF_COUNT_OVERLAPS_PATH1,
+        DF_COUNT_OVERLAPS_PATH2,
+        cols1=("contig", "pos_start", "pos_end"),
+        cols2=("contig", "pos_start", "pos_end"),
+        output_type="pandas.DataFrame",
+        overlap_filter=FilterOp.Weak,
+    )
+
+    def test_count_overlaps_count(self):
+        print(self.result)
+        assert len(self.result) == len(PD_DF_COUNT_OVERLAPS)
+
+    def test_count_overlaps_schema_rows(self):
+        result = self.result.sort_values(by=list(self.result.columns)).reset_index(
+            drop=True
+        )
+        expected = PD_DF_COUNT_OVERLAPS
         pd.testing.assert_frame_equal(result, expected)
