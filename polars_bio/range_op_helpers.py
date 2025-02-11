@@ -10,11 +10,14 @@ from polars_bio.polars_bio import (
     range_operation_frame,
     range_operation_scan,
     stream_range_operation_scan,
+    RangeOp
 )
 
 from .logging import logger
 from .range_op_io import _df_to_arrow, _get_schema, _rename_columns, range_lazy_scan
-
+import datafusion
+from .operations import do_range_operation, LEFT_TABLE, RIGHT_TABLE
+from .range_wrappers import range_operation_frame_wrapper, range_operation_scan_wrapper
 
 def range_operation(
     df1: Union[str, pl.DataFrame, pl.LazyFrame, pd.DataFrame],
@@ -57,9 +60,9 @@ def range_operation(
                 ctx=ctx,
             )
         elif output_type == "polars.DataFrame":
-            return range_operation_scan(ctx, df1, df2, range_options).to_polars()
+            return range_operation_scan_wrapper(ctx, df1, df2, range_options).to_polars()
         elif output_type == "pandas.DataFrame":
-            return range_operation_scan(ctx, df1, df2, range_options).to_pandas()
+            return range_operation_scan_wrapper(ctx, df1, df2, range_options).to_pandas()
         else:
             raise ValueError(
                 "Only polars.LazyFrame, polars.DataFrame, and pandas.DataFrame are supported"
@@ -88,7 +91,7 @@ def range_operation(
                 raise ValueError(
                     "Input and output dataframes must be of the same type: either polars or pandas"
                 )
-            return range_operation_frame(ctx, df1, df2, range_options).to_polars()
+            return range_operation_frame_wrapper(ctx, df1, df2, range_options).to_polars()
         elif output_type == "pandas.DataFrame":
             if isinstance(df1, pd.DataFrame) and isinstance(df2, pd.DataFrame):
                 df1 = _df_to_arrow(df1, range_options.columns_1[0]).to_reader()
@@ -97,7 +100,7 @@ def range_operation(
                 raise ValueError(
                     "Input and output dataframes must be of the same type: either polars or pandas"
                 )
-            return range_operation_frame(ctx, df1, df2, range_options).to_pandas()
+            return range_operation_frame_wrapper(ctx, df1, df2, range_options).to_pandas()
     else:
         raise ValueError(
             "Both dataframes must be of the same type: either polars or pandas or a path to a file"

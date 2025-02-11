@@ -103,6 +103,24 @@ EXPECTED_COVERAGE = """
 | chr3     |         100 |       200 |          0 |
 """
 
+EXPECTED_COUNT_OVERLAPS = """
+        +--------+-----------+---------+-------+
+        | contig | pos_start | pos_end | count |
+        +--------+-----------+---------+-------+
+        | chr1   | 100       | 190     | 2     |
+        | chr1   | 200       | 290     | 2     |
+        | chr1   | 400       | 600     | 2     |
+        | chr1   | 10000     | 20000   | 1     |
+        | chr1   | 22100     | 22100   | 1     |
+        | chr2   | 100       | 190     | 2     |
+        | chr2   | 200       | 290     | 2     |
+        | chr2   | 400       | 600     | 2     |
+        | chr2   | 10000     | 20000   | 1     |
+        | chr2   | 22100     | 22100   | 1     |
+        | chr3   | 100       | 200     | 0     |
+        +--------+-----------+---------+-------+
+"""
+
 # Pandas
 PD_DF_OVERLAP = (
     mdpd.from_md(EXPECTED_OVERLAP)
@@ -124,6 +142,12 @@ PD_DF_MERGE = (
     .astype({"pos_start": "int64"})
     .astype({"pos_end": "int64"})
     .astype({"n_intervals": "int64"})
+)
+PD_DF_COUNT_OVERLAPS = (
+    mdpd.from_md(EXPECTED_COUNT_OVERLAPS)
+    .astype({"pos_start": "int64"})
+    .astype({"pos_end": "int64"})
+    .astype({"count": "int64"})
 )
 
 PD_DF_CLUSTER = (
@@ -158,6 +182,9 @@ PD_DF_CLUSTER = PD_DF_CLUSTER.sort_values(by=list(PD_DF_CLUSTER.columns)).reset_
 PD_DF_COVERAGE = PD_DF_COVERAGE.sort_values(by=list(PD_DF_COVERAGE.columns)).reset_index(
     drop=True
 )
+PD_DF_COUNT_OVERLAPS = PD_DF_COUNT_OVERLAPS.sort_values(by=list(PD_DF_COUNT_OVERLAPS.columns)).reset_index(
+    drop=True
+)
 
 DF_OVER_PATH1 = f"{DATA_DIR}/overlap/reads.csv"
 DF_OVER_PATH2 = f"{DATA_DIR}/overlap/targets.csv"
@@ -171,6 +198,11 @@ PD_NEAREST_DF2 = pd.read_csv(DF_NEAREST_PATH2)
 
 DF_MERGE_PATH = f"{DATA_DIR}/merge/input.csv"
 PD_MERGE_DF = pd.read_csv(DF_MERGE_PATH)
+
+DF_COUNT_OVERLAPS_PATH1 = f"{DATA_DIR}/count_overlaps/targets.csv"
+DF_COUNT_OVERLAPS_PATH2 = f"{DATA_DIR}/count_overlaps/reads.csv"
+PD_COUNT_OVERLAPS_DF1 = pd.read_csv(DF_COUNT_OVERLAPS_PATH1)
+PD_COUNT_OVERLAPS_DF2 = pd.read_csv(DF_COUNT_OVERLAPS_PATH2)
 
 DF_CLUSTER_PATH = f"{DATA_DIR}/cluster/input.csv"
 PD_CLUSTER_DF = pd.read_csv(DF_CLUSTER_PATH)
@@ -202,3 +234,6 @@ PL_CLUSTER_DF = pl.DataFrame(PD_MERGE_DF)
 PL_DF_COVERAGE = pl.DataFrame(PD_DF_COVERAGE)
 PL_COVERAGE_DF1 = pl.DataFrame(PD_COVERAGE_DF1)
 PL_COVERAGE_DF2 = pl.DataFrame(PD_COVERAGE_DF2)
+PL_DF_COUNT_OVERLAPS = pl.DataFrame(PD_DF_COUNT_OVERLAPS)
+PL_COUNT_OVERLAPS_DF1 = pl.DataFrame(PD_COUNT_OVERLAPS_DF1)
+PL_COUNT_OVERLAPS_DF2 = pl.DataFrame(PD_COUNT_OVERLAPS_DF2)
