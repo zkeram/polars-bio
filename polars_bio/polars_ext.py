@@ -106,6 +106,7 @@ class PolarsRangesOperations:
             overlap_filter=overlap_filter,
             min_dist=min_dist,
             cols=cols
+        )
     def count_overlaps(
         self,
         other_df: pl.LazyFrame,
