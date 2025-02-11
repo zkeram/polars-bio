@@ -411,15 +411,17 @@ def coverage(
      """
     _validate_overlap_input(cols1, cols2, on_cols, suffixes, output_type, how="inner")
     my_ctx = get_py_ctx()
+    
+    df1 = read_df_to_datafusion(my_ctx, df1)
+    df2 = read_df_to_datafusion(my_ctx, df2)
+
+    df2 = merge(df2, output_type="datafusion.DataFrame", cols=cols2, on_cols=on_cols)
+    
     on_cols = [] if on_cols is None else on_cols
     cols1 = DEFAULT_INTERVAL_COLUMNS if cols1 is None else cols1
     cols2 = DEFAULT_INTERVAL_COLUMNS if cols2 is None else cols2
     cols1 = list(cols1)
     cols2 = list(cols2)
-    df1 = read_df_to_datafusion(my_ctx, df1)
-    df2 = read_df_to_datafusion(my_ctx, df2)
-
-    df2 = merge(df2, output_type="datafusion.DataFrame", cols=cols2, on_cols=on_cols)
 
     # TODO: guarantee no collisions
     contig = "contig"
