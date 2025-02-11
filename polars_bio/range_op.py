@@ -336,13 +336,13 @@ def count_overlaps(
     return convert_result(df, output_type, streaming)
 
 def merge(
-    df: Union[str, pl.DataFrame, pl.LazyFrame, pd.DataFrame],
-    overlap_filter: FilterOp = FilterOp.Strict,
-    min_dist: float = 0,
-    cols: Union[list[str], None] = ["chrom", "start", "end"],
-    on_cols: Union[list[str], None] = None,
-    output_type: str = "polars.LazyFrame",
-    streaming: bool = False,
+        df: Union[str, pl.DataFrame, pl.LazyFrame, pd.DataFrame],
+        overlap_filter: FilterOp = FilterOp.Strict,
+        min_dist: float = 0,
+        cols: Union[list[str], None] = ["chrom", "start", "end"],
+        on_cols: Union[list[str], None] = None,
+        output_type: str = "polars.LazyFrame",
+        streaming: bool = False,
 ) -> Union[pl.LazyFrame, pl.DataFrame, pd.DataFrame]:
     """
     Merge overlapping intervals. It is assumed that start < end.
@@ -374,12 +374,6 @@ def merge(
     contig = cols[0]
     start = cols[1]
     end = cols[2]
-    
-
-
-    df_schema = df.schema()
-    start_type = df_schema.field(start).type
-    end_type = df_schema.field(end).type
 
 
     on_cols = [] if on_cols is None else on_cols
@@ -395,8 +389,6 @@ def merge(
     current_intervals = "current_intervals"
     n_intervals = "n_intervals"
 
-
-    start_positions = df.select(*([col(start).alias(start_end), literal(1).alias(is_start_end)] + on_cols))
     end_positions = df.select(*([(col(end) + min_dist).alias(start_end), literal(-1).alias(is_start_end)] + on_cols))
     start_positions = df.select(*([col(start).alias(start_end), literal(1).alias(is_start_end)] + on_cols))
     all_positions = start_positions.union(end_positions)
@@ -413,19 +405,15 @@ def merge(
         order_by=sorting,
     )
     all_positions = all_positions.select(*([start_end, is_start_end,
-        datafusion.functions.sum(col(is_start_end)).over(win).alias(current_intervals)] + on_cols +
-        [datafusion.functions.row_number(partition_by = on_cols_expr, order_by=sorting).alias(n_intervals)]))
+                                            datafusion.functions.sum(col(is_start_end)).over(win).alias(current_intervals)] + on_cols +
+                                           [datafusion.functions.row_number(partition_by = on_cols_expr, order_by=sorting).alias(n_intervals)]))
     all_positions = all_positions.filter(
         ((col(current_intervals) == 0) & (col(is_start_end) == -1)) | ((col(current_intervals) == 1) & (col(is_start_end) == 1))
     )
     all_positions = all_positions.select(*([start_end, is_start_end] + on_cols + [((col(n_intervals) - datafusion.functions.lag(col(n_intervals), partition_by=on_cols_expr) + 1) / 2).alias(n_intervals)]))
     result = all_positions.select(*([(col(start_end) - min_dist).alias(end), is_start_end,
-        datafusion.functions.lag(col(start_end), partition_by=on_cols_expr).alias(start)] + on_cols + [n_intervals]))
+                                     datafusion.functions.lag(col(start_end), partition_by=on_cols_expr).alias(start)] + on_cols + [n_intervals]))
     result = result.filter(col(is_start_end) == -1)
     result = result.select(*([contig, col(start).cast(start_type), col(end).cast(end_type)] + on_cols[1:] + [n_intervals]))
-    
-    result = result.select(*([start, end] + on_cols))
-
-    result = result.select(*([contig, start, end] + on_cols[1:] + [n_intervals]))
 
     return convert_result(result, output_type, streaming)
