@@ -186,18 +186,18 @@ class TestPolarsExt:
             .reset_index(drop=True)
         )
         df_3 = (
-            bf.coverage(df_1, df_2, suffixes=("_1", "_2"))
-            .sort_values(by=["chrom_1", "start_1", "end_1"])
+            bf.coverage(df_1, df_2, suffixes=("", "_"))
+            .sort_values(by=["chrom", "start", "end"])
             .reset_index(drop=True)
         )
         #
         df_4 = (
             pl.DataFrame(df_1)
             .lazy()
-            .pb.coverage(pl.DataFrame(df_2).lazy(), suffixes=("_1", "_2"))
+            .pb.coverage(pl.DataFrame(df_2).lazy(), suffixes=("", "_"))
             .collect()
             .to_pandas()
-            .sort_values(by=["chrom_1", "start_1", "end_1"])
+            .sort_values(by=["chrom", "start", "end"])
             .reset_index(drop=True)
         )
         print(df_3.columns)
