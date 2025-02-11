@@ -414,16 +414,6 @@ def coverage(
     on_cols = [] if on_cols is None else on_cols
     cols1 = DEFAULT_INTERVAL_COLUMNS if cols1 is None else cols1
     cols2 = DEFAULT_INTERVAL_COLUMNS if cols2 is None else cols2
-    if naive_query:
-        range_options = RangeOptions(
-            range_op=NaiveRangeQuery,
-            filter_op=overlap_filter,
-            suffixes=suffixes,
-            columns_1=cols1,
-            columns_2=cols2,
-            streaming=streaming,
-        )
-        return range_operation(df1, df2, range_options, output_type, ctx)
     cols1 = list(cols1)
     cols2 = list(cols2)
     df1 = read_df_to_datafusion(my_ctx, df1)
