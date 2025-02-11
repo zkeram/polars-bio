@@ -162,7 +162,7 @@ class TestBioframe:
         
     def test_coverage_count(self):
         assert len(self.result_coverage) == len(self.result_bio_coverage)
-        assert len(self.result_coverage_lf.collect()) == len(self.result_bio_coverage
+        assert len(self.result_coverage_lf.collect()) == len(self.result_bio_coverage)
 
     def test_coverage_schema_rows(self):
         expected = self.result_bio_coverage.sort_values(
