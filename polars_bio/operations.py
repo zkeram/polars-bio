@@ -1,12 +1,14 @@
-from polars_bio.polars_bio import RangeOp, FilterOp
+from polars_bio.polars_bio import FilterOp, RangeOp
 
-LEFT_TABLE = 's1'
-RIGHT_TABLE = 's2'
+LEFT_TABLE = "s1"
+RIGHT_TABLE = "s2"
+
 
 def do_range_operation(ctx, range_options):
-  streaming = range_options.streaming
-  if range_options.range_op == RangeOp.CountOverlaps:
-      return do_count_overlaps(ctx, range_options)
+    streaming = range_options.streaming
+    if range_options.range_op == RangeOp.CountOverlaps:
+        return do_count_overlaps(ctx, range_options)
+
 
 def do_count_overlaps(ctx, range_options):
     contig1 = range_options.columns_1[0]
@@ -19,7 +21,7 @@ def do_count_overlaps(ctx, range_options):
 
     order1 = "DESC" if range_options.filter_op == FilterOp.Weak else "ASC"
     order2 = "ASC" if range_options.filter_op == FilterOp.Weak else "DESC"
-    query = f'''
+    query = f"""
             SELECT
                 chr AS {contig1}{suffix1},           -- contig
                 s1ends2start AS {pos_start1}{suffix1},  -- pos_start
@@ -55,6 +57,5 @@ def do_count_overlaps(ctx, range_options):
             )
             WHERE
                 iss1 = 0
-        '''
+        """
     return ctx.sql(query)
-

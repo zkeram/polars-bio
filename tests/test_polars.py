@@ -1,15 +1,15 @@
 from _expected import (
-    PL_DF1,
-    PL_DF2,
-    PL_DF_NEAREST,
-    PL_DF_MERGE,
-    PL_DF_COUNT_OVERLAPS,
-    PL_DF_OVERLAP,
-    PL_NEAREST_DF1,
-    PL_NEAREST_DF2,
-    PL_MERGE_DF,
     PL_COUNT_OVERLAPS_DF1,
     PL_COUNT_OVERLAPS_DF2,
+    PL_DF1,
+    PL_DF2,
+    PL_DF_COUNT_OVERLAPS,
+    PL_DF_MERGE,
+    PL_DF_NEAREST,
+    PL_DF_OVERLAP,
+    PL_MERGE_DF,
+    PL_NEAREST_DF1,
+    PL_NEAREST_DF2,
 )
 
 import polars_bio as pb
@@ -77,6 +77,7 @@ class TestNearestPolars:
         result = self.result_lazy.sort(by=self.result_lazy.columns)
         assert self.expected.equals(result)
 
+
 class TestCountOverlapsPolars:
     result_frame = pb.count_overlaps(
         PL_COUNT_OVERLAPS_DF1,
@@ -107,6 +108,7 @@ class TestCountOverlapsPolars:
     def test_count_overlaps_schema_rows_lazy(self):
         result = self.result_lazy.sort(by=self.result_lazy.columns)
         assert self.expected.equals(result)
+
 
 class TestMergePolars:
     result_frame = pb.merge(

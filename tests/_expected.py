@@ -117,9 +117,9 @@ PD_DF_NEAREST = PD_DF_NEAREST.sort_values(by=list(PD_DF_NEAREST.columns)).reset_
 PD_DF_MERGE = PD_DF_MERGE.sort_values(by=list(PD_DF_MERGE.columns)).reset_index(
     drop=True
 )
-PD_DF_COUNT_OVERLAPS = PD_DF_COUNT_OVERLAPS.sort_values(by=list(PD_DF_COUNT_OVERLAPS.columns)).reset_index(
-    drop=True
-)
+PD_DF_COUNT_OVERLAPS = PD_DF_COUNT_OVERLAPS.sort_values(
+    by=list(PD_DF_COUNT_OVERLAPS.columns)
+).reset_index(drop=True)
 
 DF_OVER_PATH1 = f"{DATA_DIR}/overlap/reads.csv"
 DF_OVER_PATH2 = f"{DATA_DIR}/overlap/targets.csv"

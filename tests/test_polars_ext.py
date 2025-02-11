@@ -108,14 +108,14 @@ class TestPolarsExt:
             .to_pandas()
             .reset_index(drop=True)
         )
-        '''
+        """
         df_2 = (
             pb.read_table(self.file, schema="bed9")
             .select(cols)
             .collect()
             .to_pandas()
             .reset_index(drop=True)
-        )'''
+        )"""
         df_3 = (
             bf.merge(df_1, min_dist=None)
             .sort_values(by=["chrom", "start", "end"])

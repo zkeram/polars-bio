@@ -90,11 +90,10 @@ class TestBioframe:
         output_type="polars.LazyFrame",
     )
     result_bio_merge = bf.merge(
-        BIO_PD_DF1,
-        cols=("contig", "pos_start", "pos_end"),
-        min_dist=None
-    ).astype({"pos_start": "int32", "pos_end": "int32"}) # bioframe changes input types
-
+        BIO_PD_DF1, cols=("contig", "pos_start", "pos_end"), min_dist=None
+    ).astype(
+        {"pos_start": "int32", "pos_end": "int32"}
+    )  # bioframe changes input types
 
     def test_overlap_count(self):
         assert len(self.result_overlap) == len(self.result_bio_overlap)
@@ -158,4 +157,3 @@ class TestBioframe:
             by=list(self.result_merge.columns)
         ).reset_index(drop=True)
         pd.testing.assert_frame_equal(result, expected)
-

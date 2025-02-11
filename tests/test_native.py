@@ -1,16 +1,16 @@
 import pandas as pd
 from _expected import (
-    DF_NEAREST_PATH1,
-    DF_NEAREST_PATH2,
-    DF_MERGE_PATH,
-    DF_OVER_PATH1,
-    DF_OVER_PATH2,
     DF_COUNT_OVERLAPS_PATH1,
     DF_COUNT_OVERLAPS_PATH2,
-    PD_DF_NEAREST,
-    PD_DF_OVERLAP,
+    DF_MERGE_PATH,
+    DF_NEAREST_PATH1,
+    DF_NEAREST_PATH2,
+    DF_OVER_PATH1,
+    DF_OVER_PATH2,
     PD_DF_COUNT_OVERLAPS,
     PD_DF_MERGE,
+    PD_DF_NEAREST,
+    PD_DF_OVERLAP,
 )
 
 import polars_bio as pb
@@ -59,6 +59,7 @@ class TestNearestNative:
         expected = PD_DF_NEAREST
         pd.testing.assert_frame_equal(result, expected)
 
+
 class TestCountOverlapsNative:
     result = pb.count_overlaps(
         DF_COUNT_OVERLAPS_PATH1,
@@ -79,6 +80,7 @@ class TestCountOverlapsNative:
         )
         expected = PD_DF_COUNT_OVERLAPS
         pd.testing.assert_frame_equal(result, expected)
+
 
 class TestMergeNative:
     result = pb.merge(
