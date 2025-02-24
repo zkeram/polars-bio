@@ -7,6 +7,7 @@ import polars as pl
 from polars_bio.polars_bio import (
     BioSessionContext,
     RangeOptions,
+    ReadOptions,
     stream_range_operation_scan,
 )
 
@@ -21,17 +22,20 @@ def range_operation(
     range_options: RangeOptions,
     output_type: str,
     ctx: BioSessionContext,
+    read_options1: Union[ReadOptions, None] = None,
+    read_options2: Union[ReadOptions, None] = None,
 ) -> Union[pl.LazyFrame, pl.DataFrame, pd.DataFrame]:
     ctx.sync_options()
     if isinstance(df1, str) and isinstance(df2, str):
-        ext1 = Path(df1).suffix
+        supported_exts = set([".parquet", ".csv", ".bed", ".vcf"])
+        ext1 = set(Path(df1).suffixes)
         assert (
-            ext1 == ".parquet" or ext1 == ".csv" or ext1 == ".bed"
-        ), "Dataframe1 must be a Parquet, a BED or CSV file"
-        ext2 = Path(df2).suffix
+            len(supported_exts.intersection(ext1)) > 0
+        ), "Dataframe1 must be a Parquet, a BED or CSV or VCF file"
+        ext2 = set(Path(df2).suffixes)
         assert (
-            ext2 == ".parquet" or ext2 == ".csv" or ext2 == ".bed"
-        ), "Dataframe2 must be a Parquet, a BED or CSV file"
+            len(supported_exts.intersection(ext2)) > 0
+        ), "Dataframe2 must be a Parquet, a BED or CSV or VCF file"
         # use suffixes to avoid column name conflicts
         if range_options.streaming:
             # FIXME: Parallelism is not supported
@@ -42,10 +46,12 @@ def range_operation(
                 "datafusion.execution.parquet.schema_force_view_types", "false", True
             )
             return stream_wrapper(
-                stream_range_operation_scan(ctx, df1, df2, range_options)
+                stream_range_operation_scan(
+                    ctx, df1, df2, range_options, read_options1, read_options2
+                )
             )
-        df_schema1 = _get_schema(df1, range_options.suffixes[0])
-        df_schema2 = _get_schema(df2, range_options.suffixes[1])
+        df_schema1 = _get_schema(df1, ctx, range_options.suffixes[0], read_options1)
+        df_schema2 = _get_schema(df2, ctx, range_options.suffixes[1], read_options2)
         merged_schema = pl.Schema({**df_schema1, **df_schema2})
         if output_type == "polars.LazyFrame":
             return range_lazy_scan(
@@ -54,14 +60,16 @@ def range_operation(
                 merged_schema,
                 range_options=range_options,
                 ctx=ctx,
+                read_options1=read_options1,
+                read_options2=read_options2,
             )
         elif output_type == "polars.DataFrame":
             return range_operation_scan_wrapper(
-                ctx, df1, df2, range_options
+                ctx, df1, df2, range_options, read_options1, read_options2
             ).to_polars()
         elif output_type == "pandas.DataFrame":
             return range_operation_scan_wrapper(
-                ctx, df1, df2, range_options
+                ctx, df1, df2, range_options, read_options1, read_options2
             ).to_pandas()
         else:
             raise ValueError(
