@@ -178,13 +178,12 @@ def count_overlaps(
     df2: Union[str, pl.DataFrame, pl.LazyFrame, pd.DataFrame],
     overlap_filter: FilterOp = FilterOp.Strict,
     suffixes: tuple[str, str] = ("", "_"),
-    return_input: bool = True,
     cols1: Union[list[str], None] = ["chrom", "start", "end"],
     cols2: Union[list[str], None] = ["chrom", "start", "end"],
     on_cols: Union[list[str], None] = None,
     output_type: str = "polars.LazyFrame",
     streaming: bool = False,
-    naive_query: bool = False,
+    naive_query: bool = True,
 ) -> Union[pl.LazyFrame, pl.DataFrame, pd.DataFrame]:
     """
     Count pairs of overlapping genomic intervals.
@@ -195,15 +194,14 @@ def count_overlaps(
         df2: Can be a path to a file, a polars DataFrame, or a pandas DataFrame. CSV with a header, BED  and Parquet are supported.
         overlap_filter: FilterOp, optional. The type of overlap to consider(Weak or Strict).
         suffixes: Suffixes for the columns of the two overlapped sets.
-        return_input: If true, return input.
         cols1: The names of columns containing the chromosome, start and end of the
             genomic intervals, provided separately for each set.
         cols2:  The names of columns containing the chromosome, start and end of the
             genomic intervals, provided separately for each set.
         on_cols: List of additional column names to join on. default is None.
         output_type: Type of the output. default is "polars.LazyFrame", "polars.DataFrame", or "pandas.DataFrame" are also supported.
+        naive_query: If True, use naive query for counting overlaps based on overlaps.
         streaming: **EXPERIMENTAL** If True, use Polars [streaming](features.md#streaming-out-of-core-processing) engine.
-        naive_query **EXPERIMENTAL** If True, use naive query for counting overlaps based on overlaps. Unlike Bioframe and the default algorithm it does only return the number unique intervals with sum of overlaps, i.e. if we have on the query side the same interval 2 times it will only return it once with the sum of overlaps - Bioframe returns the interval 2 times with the same overlap.
     Returns:
         **polars.LazyFrame** or polars.DataFrame or pandas.DataFrame of the overlapping intervals.
 
@@ -253,7 +251,7 @@ def count_overlaps(
             columns_2=cols2,
             streaming=streaming,
         )
-        return range_operation(df1, df2, range_options, output_type, ctx)
+        return range_operation(df2, df1, range_options, output_type, ctx)
     df1 = read_df_to_datafusion(my_ctx, df1)
     df2 = read_df_to_datafusion(my_ctx, df2)
 

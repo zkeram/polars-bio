@@ -5398,15 +5398,20 @@ dependencies = [
 
 [[package]]
 name = "polars_bio"
-version = "0.6.1"
+version = "0.6.2"
 dependencies = [
  "arrow",
  "arrow-array",
  "arrow-schema",
+ "async-stream",
+ "async-trait",
+ "coitrees",
  "datafusion",
  "datafusion-python",
  "datafusion-vcf",
  "exon",
+ "fnv",
+ "futures",
  "futures-util",
  "log",
  "polars",

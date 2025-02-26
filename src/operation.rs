@@ -1,4 +1,4 @@
-use datafusion::common::TableReference;
+use datafusion::catalog_common::TableReference;
 use exon::ExonSession;
 use log::{debug, info};
 use sequila_core::session_context::{Algorithm, SequilaConfig};
@@ -6,9 +6,7 @@ use tokio::runtime::Runtime;
 
 use crate::context::set_option_internal;
 use crate::option::{FilterOp, RangeOp, RangeOptions};
-use crate::query::{
-    count_overlaps_naive_query, count_overlaps_query, nearest_query, overlap_query,
-};
+use crate::query::{count_overlaps_query, nearest_query, overlap_query};
 use crate::utils::default_cols_to_string;
 use crate::{DEFAULT_COLUMN_NAMES, LEFT_TABLE, RIGHT_TABLE};
 
@@ -122,9 +120,19 @@ async fn do_count_overlaps_naive(
     ctx: &ExonSession,
     range_opts: RangeOptions,
 ) -> datafusion::dataframe::DataFrame {
-    let query = prepare_query(count_overlaps_naive_query, range_opts, ctx)
-        .await
-        .to_string();
+    let columns_1 = range_opts.columns_1.unwrap();
+    let columns_2 = range_opts.columns_2.unwrap();
+    let query = format!(
+        "SELECT * FROM count_overlaps('{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}')",
+        LEFT_TABLE,
+        RIGHT_TABLE,
+        columns_1[0],
+        columns_1[1],
+        columns_1[2],
+        columns_2[0],
+        columns_2[1],
+        columns_2[2]
+    );
     debug!("Query: {}", query);
     ctx.sql(&query).await.unwrap()
 }
