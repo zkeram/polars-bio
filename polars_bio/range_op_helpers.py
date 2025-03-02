@@ -6,18 +6,16 @@ import polars as pl
 
 from polars_bio.polars_bio import (
     BioSessionContext,
+    RangeOp,
     RangeOptions,
-    range_operation_frame,
-    range_operation_scan,
+    ReadOptions,
     stream_range_operation_scan,
-    RangeOp
 )
 
 from .logging import logger
 from .range_op_io import _df_to_arrow, _get_schema, _rename_columns, range_lazy_scan
-import datafusion
-from .operations import do_range_operation, LEFT_TABLE, RIGHT_TABLE
 from .range_wrappers import range_operation_frame_wrapper, range_operation_scan_wrapper
+
 
 def range_operation(
     df1: Union[str, pl.DataFrame, pl.LazyFrame, pd.DataFrame],
@@ -25,32 +23,45 @@ def range_operation(
     range_options: RangeOptions,
     output_type: str,
     ctx: BioSessionContext,
+    read_options1: Union[ReadOptions, None] = None,
+    read_options2: Union[ReadOptions, None] = None,
 ) -> Union[pl.LazyFrame, pl.DataFrame, pd.DataFrame]:
     ctx.sync_options()
     if isinstance(df1, str) and isinstance(df2, str):
-        ext1 = Path(df1).suffix
+        supported_exts = set([".parquet", ".csv", ".bed", ".vcf"])
+        ext1 = set(Path(df1).suffixes)
         assert (
-            ext1 == ".parquet" or ext1 == ".csv" or ext1 == ".bed"
-        ), "Dataframe1 must be a Parquet, a BED or CSV file"
-        ext2 = Path(df2).suffix
+            len(supported_exts.intersection(ext1)) > 0 or len(ext1) == 0
+        ), "Dataframe1 must be a Parquet, a BED or CSV or VCF file"
+        ext2 = set(Path(df2).suffixes)
         assert (
-            ext2 == ".parquet" or ext2 == ".csv" or ext2 == ".bed"
-        ), "Dataframe2 must be a Parquet, a BED or CSV file"
+            len(supported_exts.intersection(ext2)) > 0 or len(ext2) == 0
+        ), "Dataframe2 must be a Parquet, a BED or CSV or VCF file"
         # use suffixes to avoid column name conflicts
         if range_options.streaming:
             # FIXME: Parallelism is not supported
             # FIXME: StringViews not supported yet see: https://datafusion.apache.org/blog/2024/12/14/datafusion-python-43.1.0/
 
-            ctx.set_option("datafusion.execution.target_partitions", "1", True)
+            ctx.set_option("datafusion.execution.target_partitions", "1", False)
             ctx.set_option(
-                "datafusion.execution.parquet.schema_force_view_types", "false", True
+                "datafusion.execution.parquet.schema_force_view_types", "true", True
             )
             return stream_wrapper(
-                stream_range_operation_scan(ctx, df1, df2, range_options)
+                stream_range_operation_scan(
+                    ctx, df1, df2, range_options, read_options1, read_options2
+                )
             )
-        df_schema1 = _get_schema(df1, range_options.suffixes[0])
-        df_schema2 = _get_schema(df2, range_options.suffixes[1])
-        merged_schema = pl.Schema({**df_schema1, **df_schema2})
+
+        if range_options.range_op == RangeOp.CountOverlapsNaive:
+            ## add count column to the schema
+            merged_schema = pl.Schema(
+                {**_get_schema(df1, ctx, None, read_options1), **{"count": pl.Int32}}
+            )
+            # print(merged_schema)
+        else:
+            df_schema1 = _get_schema(df1, ctx, range_options.suffixes[0], read_options1)
+            df_schema2 = _get_schema(df2, ctx, range_options.suffixes[1], read_options2)
+            merged_schema = pl.Schema({**df_schema1, **df_schema2})
         if output_type == "polars.LazyFrame":
             return range_lazy_scan(
                 df1,
@@ -58,11 +69,18 @@ def range_operation(
                 merged_schema,
                 range_options=range_options,
                 ctx=ctx,
+                read_options1=read_options1,
+                read_options2=read_options2,
             )
         elif output_type == "polars.DataFrame":
-            return range_operation_scan_wrapper(ctx, df1, df2, range_options).to_polars()
+            return range_operation_scan_wrapper(
+                ctx, df1, df2, range_options, read_options1, read_options2
+            ).to_polars()
         elif output_type == "pandas.DataFrame":
-            return range_operation_scan_wrapper(ctx, df1, df2, range_options).to_pandas()
+            result = range_operation_scan_wrapper(
+                ctx, df1, df2, range_options, read_options1, read_options2
+            )
+            return result.to_pandas()
         else:
             raise ValueError(
                 "Only polars.LazyFrame, polars.DataFrame, and pandas.DataFrame are supported"
@@ -91,7 +109,9 @@ def range_operation(
                 raise ValueError(
                     "Input and output dataframes must be of the same type: either polars or pandas"
                 )
-            return range_operation_frame_wrapper(ctx, df1, df2, range_options).to_polars()
+            return range_operation_frame_wrapper(
+                ctx, df1, df2, range_options
+            ).to_polars()
         elif output_type == "pandas.DataFrame":
             if isinstance(df1, pd.DataFrame) and isinstance(df2, pd.DataFrame):
                 df1 = _df_to_arrow(df1, range_options.columns_1[0]).to_reader()
@@ -100,7 +120,9 @@ def range_operation(
                 raise ValueError(
                     "Input and output dataframes must be of the same type: either polars or pandas"
                 )
-            return range_operation_frame_wrapper(ctx, df1, df2, range_options).to_pandas()
+            return range_operation_frame_wrapper(
+                ctx, df1, df2, range_options
+            ).to_pandas()
     else:
         raise ValueError(
             "Both dataframes must be of the same type: either polars or pandas or a path to a file"

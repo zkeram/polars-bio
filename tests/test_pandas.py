@@ -1,11 +1,15 @@
 import pandas as pd
 from _expected import (
+    PD_COUNT_OVERLAPS_DF1,
+    PD_COUNT_OVERLAPS_DF2,
+    PD_DF_COUNT_OVERLAPS,
+    PD_DF_MERGE,
     PD_DF_NEAREST,
     PD_DF_COVERAGE,
     PD_DF_MERGE,
     PD_DF_CLUSTER,
     PD_DF_OVERLAP,
-    PD_DF_COUNT_OVERLAPS,
+    PD_MERGE_DF,
     PD_NEAREST_DF1,
     PD_NEAREST_DF2,
     PD_COVERAGE_DF1,
@@ -14,8 +18,6 @@ from _expected import (
     PD_CLUSTER_DF,
     PD_OVERLAP_DF1,
     PD_OVERLAP_DF2,
-    PD_COUNT_OVERLAPS_DF1,
-    PD_COUNT_OVERLAPS_DF2,
 )
 
 import polars_bio as pb
@@ -115,6 +117,7 @@ class TestCoveragePandas:
         )
         expected = PD_DF_COVERAGE
         pd.testing.assert_frame_equal(result, expected)
+
 class TestCountOverlapsPandas:
     result = pb.count_overlaps(
         PD_COUNT_OVERLAPS_DF1,
@@ -123,6 +126,7 @@ class TestCountOverlapsPandas:
         cols2=("contig", "pos_start", "pos_end"),
         output_type="pandas.DataFrame",
         overlap_filter=FilterOp.Weak,
+        naive_query=False,
     )
 
     def test_count_overlaps_count(self):
@@ -133,4 +137,22 @@ class TestCountOverlapsPandas:
             drop=True
         )
         expected = PD_DF_COUNT_OVERLAPS
+        pd.testing.assert_frame_equal(result, expected)
+
+
+class TestMergePandas:
+    result = pb.merge(
+        PD_MERGE_DF,
+        cols=("contig", "pos_start", "pos_end"),
+        output_type="pandas.DataFrame",
+    )
+
+    def test_merge_count(self):
+        assert len(self.result) == len(PD_DF_MERGE)
+
+    def test_merge_schema_rows(self):
+        result = self.result.sort_values(by=list(self.result.columns)).reset_index(
+            drop=True
+        )
+        expected = PD_DF_MERGE
         pd.testing.assert_frame_equal(result, expected)

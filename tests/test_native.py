@@ -1,5 +1,8 @@
 import pandas as pd
 from _expected import (
+    DF_COUNT_OVERLAPS_PATH1,
+    DF_COUNT_OVERLAPS_PATH2,
+    DF_MERGE_PATH,
     DF_NEAREST_PATH1,
     DF_NEAREST_PATH2,
     DF_COVERAGE_PATH1,
@@ -8,8 +11,8 @@ from _expected import (
     DF_CLUSTER_PATH,
     DF_OVER_PATH1,
     DF_OVER_PATH2,
-    DF_COUNT_OVERLAPS_PATH1,
-    DF_COUNT_OVERLAPS_PATH2,
+    PD_DF_COUNT_OVERLAPS,
+    PD_DF_MERGE,
     PD_DF_NEAREST,
     PD_DF_COVERAGE,
     PD_DF_OVERLAP,
@@ -130,6 +133,7 @@ class TestCountOverlapsNative:
         cols2=("contig", "pos_start", "pos_end"),
         output_type="pandas.DataFrame",
         overlap_filter=FilterOp.Weak,
+        naive_query=False,
     )
 
     def test_count_overlaps_count(self):
@@ -141,4 +145,24 @@ class TestCountOverlapsNative:
             drop=True
         )
         expected = PD_DF_COUNT_OVERLAPS
+        pd.testing.assert_frame_equal(result, expected)
+
+
+class TestMergeNative:
+    result = pb.merge(
+        DF_MERGE_PATH,
+        cols=("contig", "pos_start", "pos_end"),
+        output_type="pandas.DataFrame",
+        overlap_filter=FilterOp.Strict,
+    )
+
+    def test_merge_count(self):
+        print(self.result)
+        assert len(self.result) == len(PD_DF_MERGE)
+
+    def test_merge_schema_rows(self):
+        result = self.result.sort_values(by=list(self.result.columns)).reset_index(
+            drop=True
+        )
+        expected = PD_DF_MERGE
         pd.testing.assert_frame_equal(result, expected)

@@ -185,6 +185,9 @@ PD_DF_COVERAGE = PD_DF_COVERAGE.sort_values(by=list(PD_DF_COVERAGE.columns)).res
 PD_DF_COUNT_OVERLAPS = PD_DF_COUNT_OVERLAPS.sort_values(by=list(PD_DF_COUNT_OVERLAPS.columns)).reset_index(
     drop=True
 )
+PD_DF_COUNT_OVERLAPS = PD_DF_COUNT_OVERLAPS.sort_values(
+    by=list(PD_DF_COUNT_OVERLAPS.columns)
+).reset_index(drop=True)
 
 DF_OVER_PATH1 = f"{DATA_DIR}/overlap/reads.csv"
 DF_OVER_PATH2 = f"{DATA_DIR}/overlap/targets.csv"
@@ -215,6 +218,9 @@ PD_COVERAGE_DF2 = pd.read_csv(DF_COVERAGE_PATH2)
 BIO_PD_DF1 = pd.read_parquet(f"{DATA_DIR}/exons/").astype({"pos_start": "int64", "pos_end": "int64"})
 BIO_PD_DF2 = pd.read_parquet(f"{DATA_DIR}/fBrain-DS14718/").astype({"pos_start": "int64", "pos_end": "int64"})
 
+BIO_DF_PATH1 = f"{DATA_DIR}/exons/*.parquet"
+BIO_DF_PATH2 = f"{DATA_DIR}/fBrain-DS14718/*.parquet"
+
 
 # Polars
 PL_DF_OVERLAP = pl.DataFrame(PD_DF_OVERLAP)
@@ -234,6 +240,7 @@ PL_CLUSTER_DF = pl.DataFrame(PD_MERGE_DF)
 PL_DF_COVERAGE = pl.DataFrame(PD_DF_COVERAGE)
 PL_COVERAGE_DF1 = pl.DataFrame(PD_COVERAGE_DF1)
 PL_COVERAGE_DF2 = pl.DataFrame(PD_COVERAGE_DF2)
+
 PL_DF_COUNT_OVERLAPS = pl.DataFrame(PD_DF_COUNT_OVERLAPS)
 PL_COUNT_OVERLAPS_DF1 = pl.DataFrame(PD_COUNT_OVERLAPS_DF1)
 PL_COUNT_OVERLAPS_DF2 = pl.DataFrame(PD_COUNT_OVERLAPS_DF2)

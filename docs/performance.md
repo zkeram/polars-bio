@@ -5,10 +5,14 @@
 
 ![overlap-single.png](assets/nearest-single.png)
 
+![count-overlaps-single.png](assets/count-overlaps-single.png)
+
 ## Parallel performance 🏃‍🏃‍
 ![overlap-parallel.png](assets/overlap-parallel.png)
 
 ![overlap-parallel.png](assets/nearest-parallel.png)
+
+![count-overlaps-parallel.png](assets/count-overlaps-parallel.png)
 ## Benchmarks 🧪
 ### Detailed results shortcuts 👨‍🔬
 - [Binary operations](#binary-operations)
@@ -715,9 +719,9 @@ Two strategies were used for parallel execution (`n` - degree of parallelism):
 - `polars_bio-n`: Default, dynamic partitioning schema (median of 2 partitions/dataset) with repartitioning in DataFusion on Parquet scan and join operations:
 ```python
 import polars_bio as pb
-pb.ctx.set_option("datafusion.optimizer.repartition_joins", "true")
-pb.ctx.set_option("datafusion.optimizer.repartition_file_scans", "true")
-pb.ctx.set_option("datafusion.execution.coalesce_batches", "false")
+pb.set_option("datafusion.optimizer.repartition_joins", "true")
+pb.set_option("datafusion.optimizer.repartition_file_scans", "true")
+pb.set_option("datafusion.execution.coalesce_batches", "false")
 ```
 the `single-thread` dataset was used (see [Test datasets](#test-datasets))
 
@@ -725,9 +729,9 @@ the `single-thread` dataset was used (see [Test datasets](#test-datasets))
 - `polars_bio-n-p`: Custom partitioning schema (constant number of 8 partitions/dataset) without any repartitioning in DataFusion:
 ```python
 import polars_bio as pb
-pb.ctx.set_option("datafusion.optimizer.repartition_joins", "false")
-pb.ctx.set_option("datafusion.optimizer.repartition_file_scans", "false")
-pb.ctx.set_option("datafusion.execution.coalesce_batches", "false")
+pb.set_option("datafusion.optimizer.repartition_joins", "false")
+pb.set_option("datafusion.optimizer.repartition_file_scans", "false")
+pb.set_option("datafusion.execution.coalesce_batches", "false")
 ```
 the `parallel` dataset was used (see [Test datasets](#test-datasets))
 

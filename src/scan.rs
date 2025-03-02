@@ -7,10 +7,13 @@ use arrow::pyarrow::PyArrowType;
 use datafusion::dataframe::DataFrameWriteOptions;
 use datafusion::datasource::MemTable;
 use datafusion::prelude::{CsvReadOptions, ParquetReadOptions};
+use datafusion_vcf::table_provider::VcfTableProvider;
 use exon::ExonSession;
+use tokio::runtime::Runtime;
+use tracing::debug;
 
 use crate::context::PyBioSessionContext;
-use crate::option::InputFormat;
+use crate::option::{InputFormat, ReadOptions, VcfReadOptions};
 
 const MAX_IN_MEMORY_ROWS: usize = 1024 * 1024;
 
@@ -45,6 +48,7 @@ pub(crate) fn register_frame(
             &path,
             &table_name,
             InputFormat::Parquet,
+            None,
         ));
     }
 }
@@ -57,6 +61,8 @@ pub(crate) fn get_input_format(path: &str) -> InputFormat {
         InputFormat::Csv
     } else if path.ends_with(".bed") {
         InputFormat::Bed
+    } else if path.ends_with(".vcf") || path.ends_with(".vcf.gz") || path.ends_with(".vcf.bgz") {
+        InputFormat::Vcf
     } else {
         panic!("Unsupported format")
     }
@@ -67,6 +73,7 @@ pub(crate) async fn register_table(
     path: &str,
     table_name: &str,
     format: InputFormat,
+    read_options: Option<ReadOptions>,
 ) -> String {
     ctx.session.deregister_table(table_name).unwrap();
     match format {
@@ -84,8 +91,26 @@ pub(crate) async fn register_table(
                 .await
                 .unwrap()
         },
+        InputFormat::Vcf => {
+            let vcf_read_options = match &read_options {
+                Some(options) => match options.clone().vcf_read_options {
+                    Some(vcf_read_options) => vcf_read_options,
+                    _ => VcfReadOptions::default(),
+                },
+                _ => VcfReadOptions::default(),
+            };
+            let table_provider = VcfTableProvider::new(
+                path.to_string(),
+                vcf_read_options.info_fields,
+                vcf_read_options.format_fields,
+                vcf_read_options.thread_num,
+            )
+            .unwrap();
+            ctx.session
+                .register_table(table_name, Arc::new(table_provider))
+                .expect("Failed to register VCF table");
+        },
         InputFormat::Bam
-        | InputFormat::Vcf
         | InputFormat::Cram
         | InputFormat::Fastq
         | InputFormat::Fasta
@@ -100,4 +125,32 @@ pub(crate) async fn register_table(
         },
     };
     table_name.to_string()
+}
+
+pub(crate) fn maybe_register_table(
+    df_path_or_table: String,
+    default_table: &String,
+    read_options: Option<ReadOptions>,
+    ctx: &ExonSession,
+    rt: &Runtime,
+) -> String {
+    let ext: Vec<&str> = df_path_or_table.split('.').collect();
+    debug!("ext: {:?}", ext);
+    if ext.len() == 1 {
+        return df_path_or_table;
+    }
+    match ext.last() {
+        Some(_ext) => {
+            rt.block_on(register_table(
+                ctx,
+                &df_path_or_table,
+                default_table,
+                get_input_format(&df_path_or_table),
+                read_options,
+            ));
+            default_table.to_string()
+        },
+        _ => df_path_or_table,
+    }
+    .to_string()
 }

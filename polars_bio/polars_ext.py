@@ -107,6 +107,7 @@ class PolarsRangesOperations:
             min_dist=min_dist,
             cols=cols
         )
+
     def count_overlaps(
         self,
         other_df: pl.LazyFrame,
@@ -114,7 +115,8 @@ class PolarsRangesOperations:
         suffixes: tuple[str, str] = ("", "_"),
         cols1=["chrom", "start", "end"],
         cols2=["chrom", "start", "end"],
-        on_cols: Union[list[str], None] = None
+        on_cols: Union[list[str], None] = None,
+        naive_query: bool = True,
     ) -> pl.LazyFrame:
         """
         !!! note
@@ -128,6 +130,21 @@ class PolarsRangesOperations:
             cols1=cols1,
             cols2=cols2,
             on_cols=on_cols,
+            naive_query=naive_query,
+        )
+
+    def merge(
+        self,
+        overlap_filter: FilterOp = FilterOp.Strict,
+        min_dist: float = 0,
+        cols: Union[list[str], None] = None,
+    ) -> pl.LazyFrame:
+        """
+        !!! note
+            Alias for [merge](api.md#polars_bio.merge)
+        """
+        return pb.merge(
+            self._ldf, overlap_filter=overlap_filter, min_dist=min_dist, cols=cols
         )
 
     def sort(
