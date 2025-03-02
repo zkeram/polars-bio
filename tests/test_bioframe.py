@@ -65,8 +65,8 @@ class TestBioframe:
     )
 
     result_count_overlaps_naive = pb.count_overlaps(
-        BIO_DF_PATH1,
-        BIO_DF_PATH2,
+        BIO_PD_DF1,
+        BIO_PD_DF2,
         cols1=("contig", "pos_start", "pos_end"),
         cols2=("contig", "pos_start", "pos_end"),
         overlap_filter=FilterOp.Strict,
