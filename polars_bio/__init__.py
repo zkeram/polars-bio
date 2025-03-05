@@ -2,12 +2,14 @@ from polars_bio.polars_bio import InputFormat, ReadOptions, VcfReadOptions
 
 from .context import ctx, set_option
 from .io import (
+    describe_vcf,
     read_bam,
     read_fasta,
     read_fastq,
     read_table,
     read_vcf,
     register_vcf,
+    register_view,
     sql,
 )
 from .polars_ext import PolarsRangesOperations as LazyFrame
@@ -32,6 +34,8 @@ __all__ = [
     "read_fastq",
     "read_table",
     "register_vcf",
+    "describe_vcf",
+    "register_view",
     "sql",
     "InputFormat",
     "LazyFrame",

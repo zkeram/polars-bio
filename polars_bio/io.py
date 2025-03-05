@@ -10,9 +10,11 @@ from polars_bio.polars_bio import (
     InputFormat,
     ReadOptions,
     VcfReadOptions,
+    py_describe_vcf,
     py_read_sql,
     py_read_table,
     py_register_table,
+    py_register_view,
     py_scan_sql,
     py_scan_table,
 )
@@ -204,6 +206,39 @@ def read_table(path: str, schema: Dict = None, **kwargs) -> pl.LazyFrame:
     return df
 
 
+def describe_vcf(path: str) -> pl.DataFrame:
+    """
+    Describe VCF INFO schema.
+
+    Parameters:
+        path: The path to the VCF file.
+
+    !!! Example
+        ```python
+            import polars_bio as pb
+            vcf_1 = "gs://gcp-public-data--gnomad/release/4.1/genome_sv/gnomad.v4.1.sv.sites.vcf.gz"
+            pb.describe_vcf(vcf_1).sort("name").limit(5)
+        ```
+
+        ```shell
+            shape: (5, 3)
+            ┌───────────┬─────────┬──────────────────────────────────────────────────────────────────────────────────────┐
+            │ name      ┆ type    ┆ description                                                                          │
+            │ ---       ┆ ---     ┆ ---                                                                                  │
+            │ str       ┆ str     ┆ str                                                                                  │
+            ╞═══════════╪═════════╪══════════════════════════════════════════════════════════════════════════════════════╡
+            │ ac        ┆ Integer ┆ Number of non-reference alleles observed (biallelic sites only).                     │
+            │ ac_afr    ┆ Integer ┆ Number of non-reference African-American alleles observed (biallelic sites only).    │
+            │ ac_afr_xx ┆ Integer ┆ Number of non-reference African-American XX alleles observed (biallelic sites only). │
+            │ ac_afr_xy ┆ Integer ┆ Number of non-reference African-American XY alleles observed (biallelic sites only). │
+            │ ac_ami    ┆ Integer ┆ Number of non-reference Amish alleles observed (biallelic sites only).               │
+            └───────────┴─────────┴──────────────────────────────────────────────────────────────────────────────────────┘
+
+        ```
+    """
+    return py_describe_vcf(ctx, path).to_polars()
+
+
 def register_vcf(
     path: str,
     name: Union[str, None] = None,
@@ -240,6 +275,41 @@ def register_vcf(
     )
     read_options = ReadOptions(vcf_read_options=vcf_read_options)
     py_register_table(ctx, path, name, InputFormat.Vcf, read_options)
+
+
+def register_view(name: str, query: str) -> None:
+    """
+    Register a query as a Datafusion view. This view can be used in genomic ranges operations,
+    such as overlap, nearest, and count_overlaps. It is useful for filtering, transforming, and aggregating data
+    prior to the range operation. When combined with the range operation, it can be used to perform complex in a streaming fashion end-to-end.
+
+    Parameters:
+        name: The name of the table.
+        query: The SQL query.
+
+    !!! Example
+          ```python
+          import polars_bio as pb
+          pb.register_vcf("gs://gcp-public-data--gnomad/release/4.1/vcf/exomes/gnomad.exomes.v4.1.sites.chr21.vcf.bgz", "gnomad_sv")
+          pb.register_view("v_gnomad_sv", "SELECT replace(chrom,'chr', '') AS chrom, start, end FROM gnomad_sv")
+          pb.sql("SELECT * FROM v_gnomad_sv").limit(5).collect()
+          ```
+          ```shell
+            shape: (5, 3)
+            ┌───────┬─────────┬─────────┐
+            │ chrom ┆ start   ┆ end     │
+            │ ---   ┆ ---     ┆ ---     │
+            │ str   ┆ u32     ┆ u32     │
+            ╞═══════╪═════════╪═════════╡
+            │ 21    ┆ 5031905 ┆ 5031905 │
+            │ 21    ┆ 5031905 ┆ 5031905 │
+            │ 21    ┆ 5031909 ┆ 5031909 │
+            │ 21    ┆ 5031911 ┆ 5031911 │
+            │ 21    ┆ 5031911 ┆ 5031911 │
+            └───────┴─────────┴─────────┘
+          ```
+    """
+    py_register_view(ctx, name, query)
 
 
 def sql(query: str, streaming: bool = False) -> pl.LazyFrame:
