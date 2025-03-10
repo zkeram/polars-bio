@@ -180,14 +180,12 @@ class TestCoverageNative:
         cols1=("contig", "pos_start", "pos_end"),
         cols2=("contig", "pos_start", "pos_end"),
         output_type="pandas.DataFrame",
-        overlap_filter=FilterOp.Strict,
     )
     result_bio = bf.coverage(
         BIO_PD_DF1,
         BIO_PD_DF2,
         cols1=("contig", "pos_start", "pos_end"),
         cols2=("contig", "pos_start", "pos_end"),
-        suffixes=("_1", "_2"),
     )
 
     def test_coverage_count(self):
