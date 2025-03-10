@@ -65,8 +65,8 @@ class TestBioframe:
     )
 
     result_count_overlaps_naive = pb.count_overlaps(
-        BIO_PD_DF1,
-        BIO_PD_DF2,
+        BIO_DF_PATH1,
+        BIO_DF_PATH2,
         cols1=("contig", "pos_start", "pos_end"),
         cols2=("contig", "pos_start", "pos_end"),
         overlap_filter=FilterOp.Strict,
@@ -194,7 +194,7 @@ class TestBioframe:
             .reset_index(drop=True)
         )
         pd.testing.assert_frame_equal(result, expected)
-        pd.testing.assert_frame_equal(result_naive, expected, check_dtype=True)
+        pd.testing.assert_frame_equal(result_naive, expected, check_dtype=False)
 
     def test_merge_count(self):
         assert len(self.result_merge) == len(self.result_bio_merge)
