@@ -12,6 +12,7 @@ from polars_bio.polars_bio import (
     stream_range_operation_scan,
 )
 
+from .constants import TMP_CATALOG_DIR
 from .logging import logger
 from .range_op_io import _df_to_arrow, _get_schema, _rename_columns, range_lazy_scan
 from .range_wrappers import range_operation_frame_wrapper, range_operation_scan_wrapper
@@ -57,7 +58,10 @@ def range_operation(
             merged_schema = pl.Schema(
                 {**_get_schema(df1, ctx, None, read_options1), **{"count": pl.Int32}}
             )
-            # print(merged_schema)
+        elif range_options.range_op == RangeOp.Coverage:
+            merged_schema = pl.Schema(
+                {**_get_schema(df1, ctx, None, read_options1), **{"coverage": pl.Int32}}
+            )
         else:
             df_schema1 = _get_schema(df1, ctx, range_options.suffixes[0], read_options1)
             df_schema2 = _get_schema(df2, ctx, range_options.suffixes[1], read_options2)
@@ -81,6 +85,13 @@ def range_operation(
                 ctx, df1, df2, range_options, read_options1, read_options2
             )
             return result.to_pandas()
+        elif output_type == "datafusion.DataFrame":
+            from datafusion._internal import SessionContext as SessionContextInternal
+
+            a = SessionContextInternal()
+            return range_operation_scan_wrapper(
+                ctx, df1, df2, range_options, read_options1, read_options2
+            )
         else:
             raise ValueError(
                 "Only polars.LazyFrame, polars.DataFrame, and pandas.DataFrame are supported"
@@ -120,9 +131,10 @@ def range_operation(
                 raise ValueError(
                     "Input and output dataframes must be of the same type: either polars or pandas"
                 )
-            return range_operation_frame_wrapper(
-                ctx, df1, df2, range_options
-            ).to_pandas()
+            df = range_operation_frame_wrapper(ctx, df1, df2, range_options)
+            print(range_options.range_op)
+            print(df.schema())
+            return df.to_pandas()
     else:
         raise ValueError(
             "Both dataframes must be of the same type: either polars or pandas or a path to a file"
@@ -146,9 +158,10 @@ def stream_wrapper(pyldf):
     return pl.LazyFrame._from_pyldf(pyldf)
 
 
-def tmp_cleanup(seed):
-    # remove s1, s2 temp parquet files
-    logger.info(f"Cleaning up temp files for seed: '{seed}'")
-    for f in ["s1", "s2"]:
-        path = Path(f"{f}-{seed}.parquet")
+def tmp_cleanup(session_catalog_path: str):
+    # remove temp parquet files
+    logger.info(f"Cleaning up temp files for catalog path: '{session_catalog_path}'")
+    path = Path(session_catalog_path)
+    for path in path.glob("*.parquet"):
         path.unlink(missing_ok=True)
+    path.rmdir()

@@ -33,12 +33,10 @@ pub(crate) fn register_frame(
     ctx.session
         .register_table(&table_name, Arc::new(table_source))
         .unwrap();
-    let df = rt
-        .block_on(ctx.sql(&format!("SELECT * FROM {}", table_name)))
-        .unwrap();
+    let df = rt.block_on(ctx.session.table(&table_name)).unwrap();
     let table_size = rt.block_on(df.clone().count()).unwrap();
     if table_size > MAX_IN_MEMORY_ROWS {
-        let path = format!("{}-{}.parquet", table_name, py_ctx.seed);
+        let path = format!("{}/{}.parquet", py_ctx.catalog_dir, table_name);
         ctx.session.deregister_table(&table_name).unwrap();
         rt.block_on(df.write_parquet(&path, DataFrameWriteOptions::new(), None))
             .unwrap();
@@ -104,6 +102,8 @@ pub(crate) async fn register_table(
                 vcf_read_options.info_fields,
                 vcf_read_options.format_fields,
                 vcf_read_options.thread_num,
+                vcf_read_options.chunk_size,
+                vcf_read_options.concurrent_fetches,
             )
             .unwrap();
             ctx.session

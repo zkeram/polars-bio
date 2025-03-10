@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use datafusion::catalog_common::TableReference;
 use exon::ExonSession;
 use log::{debug, info};
@@ -7,6 +9,7 @@ use tokio::runtime::Runtime;
 use crate::context::set_option_internal;
 use crate::option::{FilterOp, RangeOp, RangeOptions};
 use crate::query::{count_overlaps_query, nearest_query, overlap_query};
+use crate::udtf::CountOverlapsProvider;
 use crate::utils::default_cols_to_string;
 use crate::DEFAULT_COLUMN_NAMES;
 
@@ -77,11 +80,19 @@ pub(crate) fn do_range_operation(
             left_table,
             right_table,
         )),
-        RangeOp::CountOverlapsNaive => rt.block_on(do_count_overlaps_naive(
+        RangeOp::CountOverlapsNaive => rt.block_on(do_count_overlaps_coverage_naive(
             ctx,
             range_options,
             left_table,
             right_table,
+            false,
+        )),
+        RangeOp::Coverage => rt.block_on(do_count_overlaps_coverage_naive(
+            ctx,
+            range_options,
+            left_table,
+            right_table,
+            true,
         )),
 
         _ => panic!("Unsupported operation"),
@@ -142,25 +153,40 @@ async fn do_count_overlaps(
     ctx.sql(&query).await.unwrap()
 }
 
-async fn do_count_overlaps_naive(
+async fn do_count_overlaps_coverage_naive(
     ctx: &ExonSession,
     range_opts: RangeOptions,
     left_table: String,
     right_table: String,
+    coverage: bool,
 ) -> datafusion::dataframe::DataFrame {
     let columns_1 = range_opts.columns_1.unwrap();
     let columns_2 = range_opts.columns_2.unwrap();
-    let query = format!(
-        "SELECT * FROM count_overlaps('{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}')",
+    let session = &ctx.session;
+    let right_table_ref = TableReference::from(right_table.clone());
+    let right_schema = session
+        .table(right_table_ref.clone())
+        .await
+        .unwrap()
+        .schema()
+        .as_arrow()
+        .clone();
+    let count_overlaps_provider = CountOverlapsProvider::new(
+        Arc::new(session.clone()),
         left_table,
         right_table,
-        columns_1[0],
-        columns_1[1],
-        columns_1[2],
-        columns_2[0],
-        columns_2[1],
-        columns_2[2]
+        right_schema,
+        columns_1,
+        columns_2,
+        range_opts.filter_op.unwrap(),
+        coverage,
     );
+    let table_name = "count_overlaps_coverage".to_string();
+    session.deregister_table(table_name.clone()).unwrap();
+    session
+        .register_table(table_name.clone(), Arc::new(count_overlaps_provider))
+        .unwrap();
+    let query = format!("SELECT * FROM {}", table_name);
     debug!("Query: {}", query);
     ctx.sql(&query).await.unwrap()
 }
