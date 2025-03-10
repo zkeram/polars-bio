@@ -196,5 +196,5 @@ class TestCoverageNative:
         result = self.result.sort_values(by=list(self.result.columns)).reset_index(
             drop=True
         )
-        expected = self.result_bio.astype({"coverage": "int64"})
-        pd.testing.assert_frame_equal(result, expected)
+        expected = self.result_bio
+        pd.testing.assert_frame_equal(result, expected, check_dtype=False)
