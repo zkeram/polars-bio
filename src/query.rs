@@ -91,12 +91,12 @@ pub(crate) fn overlap_query(query_params: QueryParams) -> String {
     let query = format!(
         r#"
             SELECT
-                a.{} as {}{}, -- contig
-                a.{} as {}{}, -- pos_start
-                a.{} as {}{}, -- pos_end
                 b.{} as {}{}, -- contig
                 b.{} as {}{}, -- pos_start
-                b.{} as {}{} -- pos_end
+                b.{} as {}{}, -- pos_end
+                a.{} as {}{}, -- contig
+                a.{} as {}{}, -- pos_start
+                a.{} as {}{} -- pos_end
                 {}
                 {}
             FROM
@@ -108,46 +108,46 @@ pub(crate) fn overlap_query(query_params: QueryParams) -> String {
             AND
                 cast(a.{} AS INT) <{} cast(b.{} AS INT)
         "#,
-        query_params.columns_1[0],
-        query_params.columns_1[0],
+        query_params.columns_2[0],
+        query_params.columns_2[0],
         query_params.suffixes.0, // contig
-        query_params.columns_1[1],
-        query_params.columns_1[1],
+        query_params.columns_2[1],
+        query_params.columns_2[1],
         query_params.suffixes.0, // pos_start
-        query_params.columns_1[2],
-        query_params.columns_1[2],
+        query_params.columns_2[2],
+        query_params.columns_2[2],
         query_params.suffixes.0, // pos_end
-        query_params.columns_2[0],
-        query_params.columns_2[0],
+        query_params.columns_1[0],
+        query_params.columns_1[0],
         query_params.suffixes.1, // contig
-        query_params.columns_2[1],
-        query_params.columns_2[1],
+        query_params.columns_1[1],
+        query_params.columns_1[1],
         query_params.suffixes.1, // pos_start
-        query_params.columns_2[2],
-        query_params.columns_2[2],
+        query_params.columns_1[2],
+        query_params.columns_1[2],
         query_params.suffixes.1, // pos_end
-        if !query_params.other_columns_1.is_empty() {
+        if !query_params.other_columns_2.is_empty() {
             ",".to_string()
                 + &format_non_join_tables(
-                    query_params.other_columns_1.clone(),
+                    query_params.other_columns_2.clone(),
                     "a".to_string(),
                     query_params.suffixes.0.clone(),
                 )
         } else {
             "".to_string()
         },
-        if !query_params.other_columns_2.is_empty() {
+        if !query_params.other_columns_1.is_empty() {
             ",".to_string()
                 + &format_non_join_tables(
-                    query_params.other_columns_2.clone(),
+                    query_params.other_columns_1.clone(),
                     "b".to_string(),
                     query_params.suffixes.1.clone(),
                 )
         } else {
             "".to_string()
         },
-        query_params.left_table,
         query_params.right_table,
+        query_params.left_table,
         query_params.columns_1[0],
         query_params.columns_2[0], // contig
         query_params.columns_1[2],
