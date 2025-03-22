@@ -12,6 +12,7 @@ nav:
       - 🚀 Performance: performance.md
       - ⚙️ API reference: api.md
       - ❓ FAQ : faq.md
+      - 🔬 Supplementary material: supplement.md
 
   - Quick start: quickstart.md
   - Features: features.md
@@ -20,6 +21,7 @@ nav:
   - Performance: performance.md
   - API reference: api.md
   - FAQ : faq.md
+  - 🔬 Supplementary material: supplement.md
 
 plugins:
   - search
@@ -33,6 +35,22 @@ plugins:
           options:
             docstring_style: google
   - markdown-exec
+  - table-reader
+  - mkdocs_matplotlib
+  - exporter:
+      formats:
+        pdf:
+          enabled: !ENV [ MKDOCS_EXPORTER_PDF, false ]
+          concurrency: 8
+#          stylesheets:
+#            - resources/stylesheets/pdf.scss
+#          covers:
+#            front: resources/templates/covers/front.html.j2
+#            back: resources/templates/covers/back.html.j2
+          aggregator:
+            enabled: true
+            output: .well-known/site.pdf
+            covers: all
 theme:
   name: material
   logo: assets/logo.png
